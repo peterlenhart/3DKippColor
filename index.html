@@ -1,1 +1,1243 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D Würfel - Vollständig</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #000000;
+      overflow: hidden;
+      touch-action: none;
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #container { 
+      position: fixed;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 360px;
+      height: 720px;
+    }
+
+    #container canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    /* UI OVERLAY */
+    #uiOverlay {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 360px;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    #hintText {
+      position: absolute;
+      top: 425px;
+      left: 180px;
+      transform: translateX(-50%);
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      background: linear-gradient(180deg, #ffffff 0%, #f0f0f0 50%, #e0e0e0 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.8),
+                   0 0 10px rgba(255,255,255,0.5);
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    #countdown {
+      position: absolute;
+      top: 475px;
+      left: 180px;
+      transform: translateX(-50%);
+      font-size: 50px;
+      font-weight: bold;
+      background: linear-gradient(180deg, #ffffff 0%, #f0f0f0 50%, #e0e0e0 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.8),
+                   0 0 10px rgba(255,255,255,0.5);
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+      pointer-events: none;
+      display: none;
+    }
+
+    #actionButton {
+      position: absolute;
+      top: 560px;
+      left: 180px;
+      transform: translateX(-50%);
+      padding: 8px 20px;
+      background: linear-gradient(180deg, #ffffff 0%, #f0f0f0 50%, #e0e0e0 100%);
+      border: 1px solid #c0c0c0;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #2a1810;
+      cursor: pointer;
+      pointer-events: auto;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.4),
+                  inset 0 1px 0 rgba(255,255,255,0.8);
+      white-space: nowrap;
+    }
+
+    #actionButton:active {
+      transform: translateX(-50%) scale(0.95);
+      background: linear-gradient(180deg, #f0f0f0 0%, #e0e0e0 50%, #d0d0d0 100%);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.4),
+                  inset 0 1px 2px rgba(0,0,0,0.2);
+    }
+
+    #actionButton.pulse {
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: translateX(-50%) scale(1); }
+      50% { transform: translateX(-50%) scale(1.05); }
+    }
+
+    /* PLATZHALTER-RECHTECKE */
+    #placeholderRow {
+      position: absolute;
+      top: 443px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    .placeholder {
+      width: 45px;
+      height: 90px;
+      background: #888888;
+      border-radius: 4px;
+    }
+
+    #kippAnzahlText {
+      position: absolute;
+      top: 543px;
+      left: 180px;
+      transform: translateX(-50%);
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+      background: linear-gradient(180deg, #ffffff 0%, #f0f0f0 50%, #e0e0e0 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    /* BUTTONS 1-6 */
+    #kippButtons {
+      position: absolute;
+      top: 575px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 6px;
+      pointer-events: auto;
+      z-index: 200;
+    }
+
+    .kippBtn {
+      width: 52px;
+      height: 52px;
+      background: linear-gradient(180deg, #ffffff 0%, #f0f0f0 50%, #e0e0e0 100%);
+      border: 2px solid #c0c0c0;
+      border-radius: 8px;
+      font-size: 22px;
+      font-weight: bold;
+      color: #2a1810;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.4),
+                  inset 0 1px 0 rgba(255,255,255,0.8);
+      transition: all 0.15s ease;
+      pointer-events: auto;
+    }
+
+    .kippBtn:hover:not(:disabled) {
+      background: linear-gradient(180deg, #ffffff 0%, #f8f8f8 50%, #f0f0f0 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.5),
+                  inset 0 1px 0 rgba(255,255,255,0.9);
+    }
+
+    .kippBtn:active:not(:disabled) {
+      transform: translateY(0);
+      background: linear-gradient(180deg, #f0f0f0 0%, #e0e0e0 50%, #d0d0d0 100%);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.4),
+                  inset 0 1px 2px rgba(0,0,0,0.2);
+    }
+
+    .kippBtn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .kippBtn.running {
+      background: linear-gradient(180deg, #ffdd00 0%, #ffcc00 50%, #ffbb00 100%);
+      border-color: #cc9900;
+    }
+
+    #backButton {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(180deg, #ffffff 0%, #f0f0f0 50%, #e0e0e0 100%);
+      border: 1px solid #c0c0c0;
+      border-radius: 50%;
+      font-size: 20px;
+      cursor: pointer;
+      pointer-events: auto;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.4),
+                  inset 0 1px 0 rgba(255,255,255,0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+    }
+
+    #backButton:active {
+      transform: scale(0.95);
+      background: linear-gradient(180deg, #f0f0f0 0%, #e0e0e0 50%, #d0d0d0 100%);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.4),
+                  inset 0 1px 2px rgba(0,0,0,0.2);
+    }
+
+    #handIcon {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 60px;
+      font-size: 50px;
+      pointer-events: none;
+      top: 270px;
+      display: none;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <div id="container"></div>
+  
+  <div id="uiOverlay">
+    <div id="handIcon">👆</div>
+    <div id="hintText">KIPPE UND MERKE!</div>
+    <div id="countdown">60</div>
+    <button id="actionButton">weiter</button>
+    <button id="backButton">↻</button>
+    
+    <!-- Platzhalter-Rechtecke (Phase 3) -->
+    <div id="placeholderRow" class="hidden">
+      <div class="placeholder"></div>
+      <div class="placeholder"></div>
+      <div class="placeholder"></div>
+      <div class="placeholder"></div>
+      <div class="placeholder"></div>
+      <div class="placeholder"></div>
+    </div>
+    <div id="kippAnzahlText" class="hidden">KIPP ANZAHL?</div>
+
+    <!-- Buttons 1-6 - Vernünftig positioniert -->
+    <div id="kippButtons" class="hidden">
+      <button class="kippBtn" data-anzahl="1">1</button>
+      <button class="kippBtn" data-anzahl="2">2</button>
+      <button class="kippBtn" data-anzahl="3">3</button>
+      <button class="kippBtn" data-anzahl="4">4</button>
+      <button class="kippBtn" data-anzahl="5">5</button>
+      <button class="kippBtn" data-anzahl="6">6</button>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script>
+    // =========================
+    // Scene Setup
+    // =========================
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x1c1c1e);
+
+    const containerWidth = 360;
+    const containerHeight = 720;
+    
+    const camera = new THREE.PerspectiveCamera(
+      50,
+      containerWidth / containerHeight,
+      0.01,
+      100
+    );
+    
+    const baseY = 2.143;
+    const verticalAngle = -1.0;
+    const horizontal = 0;
+    const radius = 1.25;
+    const southShift = -0.143;
+    
+    camera.position.set(
+      0 + Math.sin(horizontal) * 0.5,
+      baseY + radius * Math.sin(-verticalAngle),
+      radius * Math.cos(verticalAngle) + Math.cos(horizontal) * 0.3 + southShift
+    );
+    
+    camera.lookAt(0, 0.46875, 0.7 + southShift);
+    
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(360, 720);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    
+    document.getElementById('container').appendChild(renderer.domElement);
+
+    // =========================
+    // BELEUCHTUNG
+    // =========================
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+    scene.add(ambientLight);
+
+    const mainLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    mainLight.position.set(-0.15625, 8.708, -0.46875);
+    mainLight.castShadow = true;
+    mainLight.shadow.mapSize.width = 2048;
+    mainLight.shadow.mapSize.height = 2048;
+    mainLight.shadow.camera.near = 0.1;
+    mainLight.shadow.camera.far = 20;
+    mainLight.shadow.camera.left = -3;
+    mainLight.shadow.camera.right = 3;
+    mainLight.shadow.camera.top = 3;
+    mainLight.shadow.camera.bottom = -3;
+    scene.add(mainLight);
+
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.2);
+    fillLight.position.set(1, 3, 1);
+    scene.add(fillLight);
+
+    // =========================
+    // TISCH (π1 Ebene)
+    // =========================
+    const tableGeometry = new THREE.PlaneGeometry(5, 5);
+    const tableMaterial = new THREE.MeshStandardMaterial({
+      color: 0x2a1810,
+      roughness: 0.8,
+      metalness: 0.1
+    });
+    const table = new THREE.Mesh(tableGeometry, tableMaterial);
+    table.rotation.x = -Math.PI / 2;
+    table.position.y = 0;
+    table.receiveShadow = true;
+    scene.add(table);
+
+    // =========================
+    // 3D GRID auf π1
+    // =========================
+    const gridSize = 16 * 0.15625;
+    const gridDivisions = 16;
+    
+    const gridHelper = new THREE.GridHelper(gridSize, gridDivisions, 0xff8800, 0xff8800);
+    gridHelper.position.y = 0.001;
+    gridHelper.position.z = 0.421875;
+    gridHelper.material.opacity = 0.3;
+    gridHelper.material.transparent = true;
+    scene.add(gridHelper);
+    
+    const gridHelper2 = new THREE.GridHelper(gridSize, gridDivisions, 0xffffff, 0x888888);
+    gridHelper2.position.y = 0.46875;
+    gridHelper2.position.z = 0.421875;
+    gridHelper2.material.opacity = 0.3;
+    gridHelper2.material.transparent = true;
+    scene.add(gridHelper2);
+
+    // =========================
+    // ACHSEN (X und Z)
+    // =========================
+    const axesMaterialPi1 = new THREE.LineBasicMaterial({ 
+      color: 0xff8800, 
+      linewidth: 2,
+      opacity: 0.9,
+      transparent: true
+    });
+    
+    const axesMaterial = new THREE.LineBasicMaterial({ 
+      color: 0xffffff, 
+      linewidth: 2,
+      opacity: 0.9,
+      transparent: true
+    });
+
+    const xAxisGeometry1 = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(-2.5, 0.002, 0.109375),
+      new THREE.Vector3(2.5, 0.002, 0.109375)
+    ]);
+    const xAxis1 = new THREE.Line(xAxisGeometry1, axesMaterialPi1);
+    scene.add(xAxis1);
+
+    const zAxisGeometry1 = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0, 0.002, -2.5),
+      new THREE.Vector3(0, 0.002, 2.5)
+    ]);
+    const zAxis1 = new THREE.Line(zAxisGeometry1, axesMaterialPi1);
+    scene.add(zAxis1);
+
+    const xAxisGeometry2 = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(-2.5, 0.46875, 0.109375),
+      new THREE.Vector3(2.5, 0.46875, 0.109375)
+    ]);
+    const xAxis2 = new THREE.Line(xAxisGeometry2, axesMaterial);
+    scene.add(xAxis2);
+
+    const zAxisGeometry2 = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0, 0.46875, -2.5),
+      new THREE.Vector3(0, 0.46875, 2.5)
+    ]);
+    const zAxis2 = new THREE.Line(zAxisGeometry2, axesMaterial);
+    scene.add(zAxis2);
+
+    // =========================
+    // WÄNDE
+    // =========================
+    const wallGeometry = new THREE.BoxGeometry(0.9375, 0.46875, 0.0335);
+    const wallMaterial = new THREE.MeshStandardMaterial({
+      color: 0xc0c0c0,
+      metalness: 0.7,
+      roughness: 0.3
+    });
+    
+    const wall = new THREE.Mesh(wallGeometry, wallMaterial);
+    wall.position.set(0, 0.234375, 0.597125);
+    wall.castShadow = true;
+    wall.receiveShadow = true;
+    scene.add(wall);
+
+    const wall2 = new THREE.Mesh(wallGeometry, wallMaterial);
+    wall2.position.set(0, 0.234375, -0.376125);
+    wall2.castShadow = true;
+    wall2.receiveShadow = true;
+    scene.add(wall2);
+
+    // =========================
+    // SEITENWÄNDE
+    // =========================
+    const sideWallGeometry = new THREE.BoxGeometry(0.0335, 0.46875, 1.00675);
+    
+    const wallLeft = new THREE.Mesh(sideWallGeometry, wallMaterial);
+    wallLeft.position.set(-0.48550, 0.234375, 0.1105);
+    wallLeft.castShadow = true;
+    wallLeft.receiveShadow = true;
+    scene.add(wallLeft);
+    
+    const wallRight = new THREE.Mesh(sideWallGeometry, wallMaterial);
+    wallRight.position.set(0.48550, 0.234375, 0.1105);
+    wallRight.castShadow = true;
+    wallRight.receiveShadow = true;
+    scene.add(wallRight);
+
+    // =========================
+    // SCHWARZER RAHMEN (3 Zellen über π1)
+    // =========================
+    // WICHTIG: Wände sind nach Süden verschoben um 0.1105!
+    // Innenmaß: 6×6 Zellen (0.9375 × 0.9375)
+    // Rahmenbreite: 1 Zelle rundum (0.15625)
+    // Z-Mittelpunkt: 0.1105 (wie Seitenwände)
+    
+    const frameHeight = 0.46875; // 3 Zellen über π1
+    const frameThickness = 0.02; // Minimale Dicke in Y
+    const frameWidth = 0.15625; // 1 Zelle breit
+    
+    // Tatsächliche Wand-Innenkanten:
+    const wallInnerNorth = -0.359375;
+    const wallInnerSouth = 0.579875;
+    const wallInnerWest = -0.46875;
+    const wallInnerEast = 0.46875;
+    const wallCenterZ = 0.1105; // Z-Verschiebung des Spielbereichs
+    
+    const frameMaterial = new THREE.MeshStandardMaterial({
+      color: 0x000000,
+      roughness: 0.9,
+      metalness: 0.1
+    });
+    
+    // Nord-Balken (an Nord-Innenkante)
+    const northFrame = new THREE.Mesh(
+      new THREE.BoxGeometry(1.25, frameThickness, frameWidth), // 8 Zellen breit
+      frameMaterial
+    );
+    northFrame.position.set(0, frameHeight, wallInnerNorth - frameWidth/2);
+    northFrame.castShadow = true;
+    northFrame.receiveShadow = true;
+    scene.add(northFrame);
+    
+    // Süd-Balken (an Süd-Innenkante)
+    const southFrame = new THREE.Mesh(
+      new THREE.BoxGeometry(1.25, frameThickness, frameWidth), // 8 Zellen breit
+      frameMaterial
+    );
+    southFrame.position.set(0, frameHeight, wallInnerSouth + frameWidth/2);
+    southFrame.castShadow = true;
+    southFrame.receiveShadow = true;
+    scene.add(southFrame);
+    
+    // West-Balken (an West-Innenkante, zentriert auf Z=0.1105)
+    const westFrame = new THREE.Mesh(
+      new THREE.BoxGeometry(frameWidth, frameThickness, 0.9375), // 6 Zellen lang
+      frameMaterial
+    );
+    westFrame.position.set(wallInnerWest - frameWidth/2, frameHeight, wallCenterZ);
+    westFrame.castShadow = true;
+    westFrame.receiveShadow = true;
+    scene.add(westFrame);
+    
+    // Ost-Balken (an Ost-Innenkante, zentriert auf Z=0.1105)
+    const eastFrame = new THREE.Mesh(
+      new THREE.BoxGeometry(frameWidth, frameThickness, 0.9375), // 6 Zellen lang
+      frameMaterial
+    );
+    eastFrame.position.set(wallInnerEast + frameWidth/2, frameHeight, wallCenterZ);
+    eastFrame.castShadow = true;
+    eastFrame.receiveShadow = true;
+    scene.add(eastFrame);
+
+    // =========================
+    // FARBQUADRATE AUF RAHMEN
+    // =========================
+    const colorY = frameHeight + frameThickness / 2 + 0.001; // Direkt auf Rahmen-Oberfläche
+    const cellSize = 0.15625; // 1 Zelle
+    const colorThick = 0.002;
+
+    // Spalten X-Zentren (A=1..H=8), Frame links bei -0.625
+    function colX(letter) {
+      const idx = letter.charCodeAt(0) - 'A'.charCodeAt(0); // A=0..H=7
+      return -0.625 + cellSize / 2 + idx * cellSize;
+    }
+
+    // Zeilen Z-Zentren: Zeile 4 beginnt bei wallInnerNorth
+    function rowZ(row) {
+      return wallInnerNorth + (row - 4) * cellSize + cellSize / 2;
+    }
+
+    const COLORS = {
+      violett: 0xa41b85,
+      blau:    0x006bb3,
+      gruen:   0x00a652,
+      orange:  0xe67814
+    };
+
+    const colorSqSize = cellSize * 42 / 45; // 42px in Three.js-Einheiten
+
+    function addColorSquare(x, z, color) {
+      const geo = new THREE.BoxGeometry(colorSqSize, colorThick, colorSqSize);
+      const mat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.8, metalness: 0.1 });
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.position.set(x, colorY, z);
+      scene.add(mesh);
+    }
+
+    // Nord-Rahmen (Zeile 3)
+    const nordZ = wallInnerNorth - frameWidth / 2;
+    addColorSquare(colX('C'), nordZ, COLORS.gruen);
+    addColorSquare(colX('D'), nordZ, COLORS.orange);
+    addColorSquare(colX('E'), nordZ, COLORS.orange);
+    addColorSquare(colX('F'), nordZ, COLORS.blau);
+
+    // Süd-Rahmen (Zeile 10)
+    const südZ = wallInnerSouth + frameWidth / 2;
+    addColorSquare(colX('C'), südZ, COLORS.gruen);
+    addColorSquare(colX('D'), südZ, COLORS.violett);
+    addColorSquare(colX('E'), südZ, COLORS.violett);
+    addColorSquare(colX('F'), südZ, COLORS.blau);
+
+    // West-Rahmen (Spalte A): 5↔8 getauscht
+    const westX = wallInnerWest - frameWidth / 2;
+    addColorSquare(westX, rowZ(5), COLORS.violett);
+    addColorSquare(westX, rowZ(6), COLORS.blau);
+    addColorSquare(westX, rowZ(7), COLORS.blau);
+    addColorSquare(westX, rowZ(8), COLORS.orange);
+
+    // Ost-Rahmen (Spalte H)
+    const ostX = wallInnerEast + frameWidth / 2;
+    addColorSquare(ostX, rowZ(5), COLORS.violett);
+    addColorSquare(ostX, rowZ(6), COLORS.gruen);
+    addColorSquare(ostX, rowZ(7), COLORS.gruen);
+    addColorSquare(ostX, rowZ(8), COLORS.orange);
+
+
+    // =========================
+    // WÜRFEL mit 3x3 Grid-Textur
+    // =========================
+    const cubeSize = 0.46875;
+
+    // Randomdeck 1-12 mischen
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+    const deck = shuffle([1,2,3,4,5,6,7,8,9,10,11,12]);
+
+    // Slot-Zuordnung: welche Zelle auf welcher Face → deck-Index
+    // f0: 7=S1, 4=S2, 2=S3, 3=S4
+    // f1: 10=S1, 11=S2, 15=S3, 18=S4
+    // f2: 27=S1, 26=S2, 22=S3, 19=S4
+    // deck[0-3] → f0 Slots, deck[4-7] → f1 Slots, deck[8-11] → f2 Slots
+
+    // Canvas-Textur: 3x3 Gitter, slotMap = { "row,col": { val, rot } }
+    function createFaceTexture(slotMap) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      const cell = 256 / 3;
+
+      // Bambusfarbe Grundfläche
+      ctx.fillStyle = '#a08060';
+      ctx.fillRect(0, 0, 256, 256);
+
+      // Slot-Zellen beschriften
+      ctx.fillStyle = '#2a1810';
+      ctx.font = 'bold 56px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      for (const key in slotMap) {
+        const [r, c] = key.split(',').map(Number);
+        const { val, rot } = slotMap[key];
+        const cx = c * cell + cell / 2;
+        const cy = r * cell + cell / 2;
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(rot);
+        // Zweistellige Zahlen leicht nach links für optische Zentrierung
+        const xOff = val >= 10 ? -4 : 0;
+        ctx.fillText(val.toString(), xOff, 0);
+        // Punkt bei 6 und 9: Satzpunkt nach der Zahl, gleiche Baseline
+        if (val === 6 || val === 9) {
+          ctx.beginPath();
+          ctx.arc(xOff + 22, 18, 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      // Gitterlinien
+      ctx.strokeStyle = '#c4a882';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(85, 0);   ctx.lineTo(85, 256);
+      ctx.moveTo(171, 0);  ctx.lineTo(171, 256);
+      ctx.moveTo(0, 85);   ctx.lineTo(256, 85);
+      ctx.moveTo(0, 171);  ctx.lineTo(256, 171);
+      ctx.stroke();
+
+      // Rand
+      ctx.strokeStyle = '#6b5040';
+      ctx.lineWidth = 6;
+      ctx.strokeRect(3, 3, 250, 250);
+
+      return canvas;
+    }
+
+    function mat(slotMap) {
+      return new THREE.MeshStandardMaterial({
+        map: new THREE.CanvasTexture(createFaceTexture(slotMap || {})),
+        metalness: 0.3, roughness: 0.7
+      });
+    }
+
+    // Material-Array: [+X, -X, +Y, -Y, +Z, -Z]
+    // Rotationen per-Slot:
+    // f2 (+Y): S1,S2 von Süden lesbar (0), S3,S4 von Westen lesbar (-π/2)
+    // f0 (+Z): S1,S2 von Westen lesbar (-π/2), S3,S4 stehen Kopf (π)
+    // f1 (-X): S1,S2 stehen Kopf (π), S3,S4 von Süden lesbar (π/2)
+    const cubeMaterial = [
+      mat(null),            // [0] +X  – leer
+      mat({                 // [1] -X  = f1
+        '0,0': { val: deck[4],  rot: Math.PI },       // S1 – Kopf
+        '0,1': { val: deck[5],  rot: Math.PI },       // S2 – Kopf
+        '1,2': { val: deck[6],  rot: -Math.PI / 2 },   // S3
+        '2,2': { val: deck[7],  rot: -Math.PI / 2 }    // S4
+      }),
+      mat({                 // [2] +Y  = f2
+        '2,2': { val: deck[8],  rot: 0 },              // S1 – von Süden lesbar
+        '2,1': { val: deck[9],  rot: 0 },              // S2 – von Süden lesbar
+        '1,0': { val: deck[10], rot: Math.PI / 2 },    // S3
+        '0,0': { val: deck[11], rot: Math.PI / 2 }     // S4
+      }),
+      mat(null),            // [3] -Y  – leer
+      mat({                 // [4] +Z  = f0
+        '2,0': { val: deck[0],  rot: Math.PI / 2 },    // S1
+        '1,0': { val: deck[1],  rot: Math.PI / 2 },    // S2
+        '0,1': { val: deck[2],  rot: Math.PI },         // S3 – Kopf
+        '0,2': { val: deck[3],  rot: Math.PI }          // S4 – Kopf
+      }),
+      mat(null)             // [5] -Z  – leer
+    ];
+
+    const cubeGeometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
+    
+    const offset = cubeSize / 2;
+
+    // =========================
+    // KANTEN-KIPP-WÜRFEL
+    // =========================
+    const kipGroup = new THREE.Group();
+    kipGroup.visible = true; // Direkt sichtbar, Phase 1 entfernt
+    scene.add(kipGroup);
+    
+    const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+    cube.position.set(-offset, offset, 0.109375 + offset);
+    cube.castShadow = true;
+    cube.receiveShadow = true;
+    kipGroup.add(cube);
+
+    // Grüne Markierung - Obere Ostkante
+    const edgeGeometry = new THREE.CylinderGeometry(0.008, 0.008, cubeSize, 8);
+    const edgeMaterial = new THREE.MeshStandardMaterial({
+      color: 0x00ff00,
+      metalness: 0.5,
+      roughness: 0.3,
+      emissive: 0x00ff00,
+      emissiveIntensity: 0.3
+    });
+    
+    const upperEastEdge = new THREE.Mesh(edgeGeometry, edgeMaterial);
+    upperEastEdge.rotation.x = Math.PI / 2;
+    upperEastEdge.position.set(0, 0.46875, 0.109375 + cubeSize / 2);
+    kipGroup.add(upperEastEdge);
+
+    // =========================
+    // 2D-TIMING SYSTEM
+    // =========================
+    const FIXED_SPEED = 3;
+    const TARGET_MIN = 0.55;
+    const STEP_MAX = 0.80;
+    let targetTimeMul = 1;
+
+    function lerp(a, b, t) {
+      return a + (b - a) * t;
+    }
+
+    function getTiming() {
+      const v = FIXED_SPEED;
+      const baseHold = Math.max(520, Math.round(2400 - v * 450));
+      const baseKip = Math.max(160, Math.round(baseHold * 0.50));
+      const baseW = baseHold;
+      
+      const mul = Math.max(TARGET_MIN, Math.min(1, targetTimeMul));
+      
+      const hold = Math.max(260, Math.round(baseHold * mul));
+      const kip = Math.max(120, Math.round(baseKip * mul));
+      const wfull = Math.max(260, Math.round(baseW * mul));
+      
+      return { holdMs: hold, kipMs: kip, wMs: wfull };
+    }
+
+    // =========================
+    // UI ELEMENTS
+    // =========================
+    const hintText = document.getElementById('hintText');
+    const countdown = document.getElementById('countdown');
+    const actionButton = document.getElementById('actionButton');
+    const backButton = document.getElementById('backButton');
+    const kippButtons = document.getElementById('kippButtons');
+
+    let gamePhase = 'kippen'; // Startet direkt in Phase 2
+    let currentMode = 'kanten'; // Startet direkt im Kanten-Modus
+    let kippCount = 0;
+    let countdownTimer = null;
+
+    // UI für Phase 2 initialisieren
+    hintText.textContent = 'KIPPE UND MERKE!';
+    actionButton.textContent = 'weiter';
+    
+    function startCountdown(onFinish) {
+      let timeLeft = 60;
+      countdown.textContent = timeLeft;
+      countdown.style.display = 'block';
+      
+      countdownTimer = setInterval(() => {
+        timeLeft--;
+        countdown.textContent = timeLeft;
+        if (timeLeft <= 0) {
+          stopCountdown();
+          if (onFinish) onFinish();
+        }
+      }, 1000);
+    }
+    
+    function stopCountdown() {
+      if (countdownTimer) {
+        clearInterval(countdownTimer);
+        countdownTimer = null;
+      }
+      countdown.style.display = 'none';
+    }
+    
+    // Countdown direkt für Phase 2 starten
+    startCountdown(() => {
+      if (gamePhase === 'kippen') {
+        phaseKippenToSpielen();
+      }
+    });
+    
+    function phaseKippenToSpielen() {
+      gamePhase = 'spielen';
+      currentMode = 'kanten'; // Bleibt im Kanten-Modus
+      
+      // Countdown STOPPEN
+      stopCountdown();
+      
+      // UI umschalten
+      hintText.style.display = 'none';
+      actionButton.style.display = 'none';
+      document.getElementById('placeholderRow').classList.remove('hidden');
+      document.getElementById('kippAnzahlText').classList.remove('hidden');
+      kippButtons.classList.remove('hidden');
+      
+    }
+    
+    actionButton.addEventListener('click', () => {
+      if (gamePhase === 'kippen') {
+        phaseKippenToSpielen();
+      }
+    });
+
+    backButton.addEventListener('click', () => {
+      gamePhase = 'kippen'; // Zurück zu Phase 2
+      currentMode = 'kanten';
+      kippCount = 0;
+      
+      // UI zurücksetzen zu Phase 2
+      hintText.style.display = 'block';
+      hintText.textContent = 'KIPPE UND MERKE!';
+      actionButton.textContent = 'weiter';
+      actionButton.style.display = 'block';
+      actionButton.classList.remove('pulse');
+      kippButtons.classList.add('hidden');
+      document.getElementById('placeholderRow').classList.add('hidden');
+      document.getElementById('kippAnzahlText').classList.add('hidden');
+      
+      // Würfel zurücksetzen zu Q3
+      cube.position.set(-offset, offset, 0.109375 + offset);
+      cube.rotation.set(0, 0, 0);
+      currentQuadrant = 3;
+      
+      // Countdown neu starten für Phase 2
+      startCountdown(() => {
+        if (gamePhase === 'kippen') {
+          phaseKippenToSpielen();
+        }
+      });
+      
+    });
+
+    // =========================
+    // WÜRFEL-KIPPMECHANIK
+    // =========================
+    // DRAG-KIPP-STEUERUNG (Phase 2)
+    // =========================
+    let isSwiping = false;
+    let swipeStartX = 0;
+    let swipeStartY = 0;
+    let isAnimating = false;
+    let currentQuadrant = 3;
+
+    // Drag-State
+    let dragActive = false;
+    let dragPivotGroup = null;
+    let dragAxis = null;
+    let dragTargetSign = 0;
+    let dragToQ = 0;
+    let dragCurrentAngle = 0;
+    const DRAG_SENSITIVITY = 150; // px für volle 90°
+
+    function getKippConfig(direction) {
+      const configs = {
+        'north':         { pivotPoint: new THREE.Vector3(-0.234375, 0, 0.109375), axis: 'x', targetRotation: -Math.PI/2, toQ: 0 },
+        'south':         { pivotPoint: new THREE.Vector3(-0.234375, 0, 0.109375), axis: 'x', targetRotation:  Math.PI/2, toQ: 3 },
+        'east':          { pivotPoint: new THREE.Vector3(0, 0, 0.343125),         axis: 'z', targetRotation: -Math.PI/2, toQ: 1 },
+        'west':          { pivotPoint: new THREE.Vector3(0, 0, 0.343125),         axis: 'z', targetRotation:  Math.PI/2, toQ: 0 },
+        'south_from_q1': { pivotPoint: new THREE.Vector3(0.234375, 0, 0.109375),  axis: 'x', targetRotation:  Math.PI/2, toQ: 2 },
+        'north_from_q2': { pivotPoint: new THREE.Vector3(0.234375, 0, 0.109375),  axis: 'x', targetRotation: -Math.PI/2, toQ: 1 },
+        'west_from_q2':  { pivotPoint: new THREE.Vector3(0, 0, 0.343125),         axis: 'z', targetRotation:  Math.PI/2, toQ: 3 },
+        'east_from_q3':  { pivotPoint: new THREE.Vector3(0, 0, 0.343125),         axis: 'z', targetRotation: -Math.PI/2, toQ: 2 }
+      };
+      return configs[direction];
+    }
+
+    function getValidDirection(deltaX, deltaY) {
+      if (Math.abs(deltaY) >= Math.abs(deltaX)) {
+        if (deltaY < 0) {
+          if (currentQuadrant === 3) return 'north';
+          if (currentQuadrant === 2) return 'north_from_q2';
+        } else {
+          if (currentQuadrant === 0) return 'south';
+          if (currentQuadrant === 1) return 'south_from_q1';
+        }
+      } else {
+        if (deltaX > 0) {
+          if (currentQuadrant === 0) return 'east';
+          if (currentQuadrant === 3) return 'east_from_q3';
+        } else {
+          if (currentQuadrant === 1) return 'west';
+          if (currentQuadrant === 2) return 'west_from_q2';
+        }
+      }
+      return null;
+    }
+
+    renderer.domElement.addEventListener('touchstart', (e) => {
+      if (currentMode === 'kanten' && gamePhase === 'kippen') {
+        if (isAnimating) return;
+        e.preventDefault();
+        const touch = e.touches[0];
+        swipeStartX = touch.clientX;
+        swipeStartY = touch.clientY;
+        isSwiping = true;
+        dragActive = false;
+      }
+    });
+
+    renderer.domElement.addEventListener('touchmove', (e) => {
+      if (!isSwiping || isAnimating || gamePhase !== 'kippen' || currentMode !== 'kanten') return;
+      e.preventDefault();
+
+      const touch = e.touches[0];
+      const deltaX = touch.clientX - swipeStartX;
+      const deltaY = touch.clientY - swipeStartY;
+
+      // Warte auf minimale Bewegung bevor Richtung bestimmt wird
+      if (!dragActive) {
+        if (Math.max(Math.abs(deltaX), Math.abs(deltaY)) < 8) return;
+
+        const direction = getValidDirection(deltaX, deltaY);
+        if (!direction) { isSwiping = false; return; }
+
+        const config = getKippConfig(direction);
+        dragAxis = config.axis;
+        dragTargetSign = config.targetRotation > 0 ? 1 : -1;
+        dragToQ = config.toQ;
+
+        // Pivot-Gruppe setup
+        dragPivotGroup = new THREE.Group();
+        dragPivotGroup.position.copy(config.pivotPoint);
+        kipGroup.add(dragPivotGroup);
+
+        cube.updateMatrixWorld();
+        const cubeWorldPos = new THREE.Vector3();
+        cube.getWorldPosition(cubeWorldPos);
+        kipGroup.remove(cube);
+        cube.position.copy(cubeWorldPos.clone().sub(config.pivotPoint));
+        dragPivotGroup.add(cube);
+
+        dragActive = true;
+        dragCurrentAngle = 0;
+      }
+
+      // Rotation live berechnen
+      // X-Achse: deltaY direkt (oben neg, unten pos)
+      // Z-Achse: -deltaX (rechts pos wird neg Rotation)
+      const relevantDelta = (dragAxis === 'x') ? deltaY : -deltaX;
+      let angle = (relevantDelta / DRAG_SENSITIVITY) * (Math.PI / 2);
+
+      // Clamp zwischen 0 und targetRotation
+      if (dragTargetSign > 0) {
+        angle = Math.max(0, Math.min(Math.PI / 2, angle));
+      } else {
+        angle = Math.min(0, Math.max(-Math.PI / 2, angle));
+      }
+
+      dragCurrentAngle = angle;
+
+      if (dragAxis === 'x') {
+        dragPivotGroup.rotation.x = dragCurrentAngle;
+      } else {
+        dragPivotGroup.rotation.z = dragCurrentAngle;
+      }
+    });
+
+    renderer.domElement.addEventListener('touchend', () => {
+      isSwiping = false;
+      if (!dragActive) return;
+
+      // Tipping-Point bei 45° (PI/4)
+      const absAngle = Math.abs(dragCurrentAngle);
+      let targetAngle, finalQ;
+
+      if (absAngle > Math.PI / 4) {
+        targetAngle = dragTargetSign * Math.PI / 2; // Kippen
+        finalQ = dragToQ;
+      } else {
+        targetAngle = 0; // Zurückfallen
+        finalQ = currentQuadrant;
+      }
+
+      // Schwerkraft-Fall-Animation
+      isAnimating = true;
+      const startAngle = dragCurrentAngle;
+      const angleDiff = targetAngle - startAngle;
+      const fallDuration = Math.max(150, Math.abs(angleDiff) / (Math.PI / 2) * 420);
+      const startTime = Date.now();
+
+      function animateFall() {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / fallDuration, 1);
+
+        // Ease-in (t²) = Schwerkraft-Beschleunigung
+        const eased = progress * progress;
+        const currentAngle = startAngle + angleDiff * eased;
+
+        if (dragAxis === 'x') {
+          dragPivotGroup.rotation.x = currentAngle;
+        } else {
+          dragPivotGroup.rotation.z = currentAngle;
+        }
+
+        if (progress < 1) {
+          requestAnimationFrame(animateFall);
+        } else {
+          if (targetAngle === 0) {
+            // Zurückgefallen: Würfel zurück in kipGroup
+            cube.updateMatrixWorld();
+            const newPos = new THREE.Vector3();
+            cube.getWorldPosition(newPos);
+            const newQuat = new THREE.Quaternion();
+            cube.getWorldQuaternion(newQuat);
+            dragPivotGroup.remove(cube);
+            kipGroup.remove(dragPivotGroup);
+            cube.position.copy(newPos);
+            cube.quaternion.copy(newQuat);
+            kipGroup.add(cube);
+          } else {
+            // Gekippt: finalisieren
+            finalizeKipp(finalQ, null);
+          }
+          dragActive = false;
+          dragPivotGroup = null;
+          isAnimating = false;
+        }
+      }
+
+      animateFall();
+    });
+    
+    async function performKipp(direction, duration = 800) {
+      if (isAnimating) return;
+      isAnimating = true;
+      
+      let pivotPoint, axis, targetRotation, fromQ, toQ;
+      
+      if (direction === 'north') {
+        pivotPoint = new THREE.Vector3(-0.234375, 0, 0.109375);
+        axis = 'x';
+        targetRotation = -Math.PI / 2;
+        fromQ = 3;
+        toQ = 0;
+      } else if (direction === 'south') {
+        pivotPoint = new THREE.Vector3(-0.234375, 0, 0.109375);
+        axis = 'x';
+        targetRotation = Math.PI / 2;
+        fromQ = 0;
+        toQ = 3;
+      } else if (direction === 'east') {
+        pivotPoint = new THREE.Vector3(0, 0, 0.109375 + 0.234375);
+        axis = 'z';
+        targetRotation = -Math.PI / 2;
+        fromQ = 0;
+        toQ = 1;
+      } else if (direction === 'west') {
+        pivotPoint = new THREE.Vector3(0, 0, 0.109375 + 0.234375);
+        axis = 'z';
+        targetRotation = Math.PI / 2;
+        fromQ = 1;
+        toQ = 0;
+      } else if (direction === 'south_from_q1') {
+        pivotPoint = new THREE.Vector3(0.234375, 0, 0.109375);
+        axis = 'x';
+        targetRotation = Math.PI / 2;
+        fromQ = 1;
+        toQ = 2;
+      } else if (direction === 'north_from_q2') {
+        pivotPoint = new THREE.Vector3(0.234375, 0, 0.109375);
+        axis = 'x';
+        targetRotation = -Math.PI / 2;
+        fromQ = 2;
+        toQ = 1;
+      } else if (direction === 'west_from_q2') {
+        pivotPoint = new THREE.Vector3(0, 0, 0.109375 + 0.234375);
+        axis = 'z';
+        targetRotation = Math.PI / 2;
+        fromQ = 2;
+        toQ = 3;
+      } else if (direction === 'east_from_q3') {
+        pivotPoint = new THREE.Vector3(0, 0, 0.109375 + 0.234375);
+        axis = 'z';
+        targetRotation = -Math.PI / 2;
+        fromQ = 3;
+        toQ = 2;
+      }
+      
+      const pivotGroup = new THREE.Group();
+      pivotGroup.position.copy(pivotPoint);
+      kipGroup.add(pivotGroup);
+      
+      cube.updateMatrixWorld();
+      const cubeWorldPos = new THREE.Vector3();
+      cube.getWorldPosition(cubeWorldPos);
+      
+      kipGroup.remove(cube);
+      
+      const relativePos = cubeWorldPos.clone().sub(pivotPoint);
+      cube.position.copy(relativePos);
+      pivotGroup.add(cube);
+      
+      const startTime = Date.now();
+      
+      return new Promise((resolve) => {
+        function animate() {
+          const elapsed = Date.now() - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          
+          const eased = progress < 0.5 
+            ? 2 * progress * progress 
+            : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+          
+          if (axis === 'x') {
+            pivotGroup.rotation.x = eased * targetRotation;
+          } else {
+            pivotGroup.rotation.z = eased * targetRotation;
+          }
+          
+          if (progress < 1) {
+            requestAnimationFrame(animate);
+          } else {
+            finalizeKipp(toQ, resolve);
+          }
+        }
+        
+        animate();
+      });
+    }
+    
+    function finalizeKipp(newQ, callback) {
+      cube.updateMatrixWorld();
+      const newWorldPos = new THREE.Vector3();
+      cube.getWorldPosition(newWorldPos);
+      const newWorldQuat = new THREE.Quaternion();
+      cube.getWorldQuaternion(newWorldQuat);
+      
+      const parent = cube.parent;
+      if (parent && parent.parent) {
+        parent.parent.remove(parent);
+      }
+      
+      cube.position.copy(newWorldPos);
+      cube.quaternion.copy(newWorldQuat);
+      kipGroup.add(cube);
+      
+      currentQuadrant = newQ;
+      isAnimating = false;
+      if (callback) callback();
+    }
+
+    // =========================
+    // KIPP-SEQUENZ mit 2D-Timing
+    // =========================
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    async function runKippSequence(steps) {
+      if (isAnimating) return;
+      
+      const T = getTiming();
+      const kipFactor = 1;
+      
+      
+      setButtonsDisabled(true);
+      
+      for (let i = 0; i < steps; i++) {
+        const tStep = (steps <= 1) ? 0 : (i / (steps - 1));
+        const stepMul = lerp(1.0, STEP_MAX, tStep);
+        
+        const kipTime = Math.max(40, Math.round(T.kipMs * kipFactor * stepMul));
+        const holdTime = Math.max(40, Math.round(T.wMs * stepMul));
+        
+        
+        let direction;
+        if (currentQuadrant === 0) direction = 'east';
+        else if (currentQuadrant === 1) direction = 'south_from_q1';
+        else if (currentQuadrant === 2) direction = 'west_from_q2';
+        else direction = 'north';
+        
+        await performKipp(direction, kipTime);
+        await sleep(holdTime);
+      }
+      
+      setButtonsDisabled(false);
+    }
+
+    // =========================
+    // BUTTON HANDLER (nur aktiv in Phase 3)
+    // =========================
+    function setButtonsDisabled(disabled) {
+      const buttons = document.querySelectorAll('.kippBtn');
+      buttons.forEach(btn => {
+        btn.disabled = disabled;
+        if (disabled) {
+          btn.classList.add('running');
+        } else {
+          btn.classList.remove('running');
+        }
+      });
+    }
+
+    document.querySelectorAll('.kippBtn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (gamePhase !== 'spielen') return; // Nur in Phase 3 aktiv
+        
+        const anzahl = parseInt(btn.dataset.anzahl);
+        runKippSequence(anzahl);
+      });
+    });
+
+    // Animation loop
+    function renderLoop() {
+      requestAnimationFrame(renderLoop);
+      renderer.render(scene, camera);
+    }
+
+    renderLoop();
+  </script>
+</body>
+</html>
