@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>3D Würfel - Vollständig</title>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
     body {
       font-family: system-ui, -apple-system, sans-serif;
@@ -87,25 +87,29 @@
       top: 560px;
       left: 180px;
       transform: translateX(-50%);
-      padding: 8px 20px;
-      background: linear-gradient(180deg, #ffffff 0%, #f0f0f0 50%, #e0e0e0 100%);
-      border: 1px solid #c0c0c0;
-      border-radius: 6px;
-      font-size: 16px;
+      padding: 8px 28px;
+      background: linear-gradient(180deg, #606060 0%, #404040 100%);
+      border: 2px solid #808080;
+      border-radius: 8px;
+      font-size: 22px;
       font-weight: bold;
-      color: #2a1810;
+      color: #c0b8a8;
       cursor: pointer;
       pointer-events: auto;
       box-shadow: 0 4px 8px rgba(0,0,0,0.4),
                   inset 0 1px 0 rgba(255,255,255,0.8);
+      transition: all 0.15s ease;
       white-space: nowrap;
     }
 
+    #actionButton:hover {
+      background: linear-gradient(180deg, #6a6a6a 0%, #4a4a4a 100%);
+      transform: translateX(-50%) translateY(-2px);
+    }
+
     #actionButton:active {
-      transform: translateX(-50%) scale(0.95);
-      background: linear-gradient(180deg, #f0f0f0 0%, #e0e0e0 50%, #d0d0d0 100%);
-      box-shadow: 0 2px 4px rgba(0,0,0,0.4),
-                  inset 0 1px 2px rgba(0,0,0,0.2);
+      transform: translateX(-50%) translateY(0);
+      background: linear-gradient(180deg, #505050 0%, #303030 100%);
     }
 
     #actionButton.pulse {
@@ -131,25 +135,8 @@
     .placeholder {
       width: 45px;
       height: 90px;
-      background: #888888;
+      background: linear-gradient(to bottom, #888888 50%, #a08060 50%);
       border-radius: 4px;
-    }
-
-    #kippAnzahlText {
-      position: absolute;
-      top: 543px;
-      left: 180px;
-      transform: translateX(-50%);
-      text-align: center;
-      font-size: 18px;
-      font-weight: bold;
-      background: linear-gradient(180deg, #ffffff 0%, #f0f0f0 50%, #e0e0e0 100%);
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
-      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
-      pointer-events: none;
-      white-space: nowrap;
     }
 
     /* BUTTONS 1-6 */
@@ -202,6 +189,13 @@
     .kippBtn.running {
       background: linear-gradient(180deg, #ffdd00 0%, #ffcc00 50%, #ffbb00 100%);
       border-color: #cc9900;
+    }
+
+    .kippBtn.clicked {
+      background: linear-gradient(180deg, #4a3e28 0%, #3a2e1c 100%) !important;
+      border-color: #d4b48c !important;
+      color: #f0e0c0 !important;
+      box-shadow: 0 0 8px rgba(212,180,140,0.6), 0 0 20px rgba(212,180,140,0.35), inset 0 0 6px rgba(212,180,140,0.15);
     }
 
     #backButton {
@@ -260,23 +254,26 @@
     
     <!-- Platzhalter-Rechtecke (Phase 3) -->
     <div id="placeholderRow" class="hidden">
-      <div class="placeholder"></div>
+      <div class="placeholder" id="targetRect"></div>
       <div class="placeholder"></div>
       <div class="placeholder"></div>
       <div class="placeholder"></div>
       <div class="placeholder"></div>
       <div class="placeholder"></div>
     </div>
-    <div id="kippAnzahlText" class="hidden">KIPP ANZAHL?</div>
+    <div id="richtungButtons" class="hidden" style="position:absolute;top:520px;left:50%;transform:translateX(-50%);display:flex;gap:21px;width:180px;z-index:200;">
+      <button id="cwBtn" class="kippBtn" style="flex:1;height:45px;font-size:40px;line-height:1;position:relative;background:linear-gradient(180deg,#606060 0%,#404040 100%);color:#c0b8a8;border-color:#808080;"><span style="position:absolute;top:calc(50% - 3px);left:50%;transform:translate(-50%,-50%);font-size:40px;">↻</span></button>
+      <button id="ccwBtn" class="kippBtn" style="flex:1;height:45px;font-size:40px;line-height:1;position:relative;background:linear-gradient(180deg,#404040 0%,#303030 100%);color:#c0b8a8;border-color:#808080;"><span style="position:absolute;top:calc(50% - 3px);left:50%;transform:translate(-50%,-50%);font-size:40px;">↺</span></button>
+    </div>
 
     <!-- Buttons 1-6 - Vernünftig positioniert -->
     <div id="kippButtons" class="hidden">
-      <button class="kippBtn" data-anzahl="1">1</button>
-      <button class="kippBtn" data-anzahl="2">2</button>
-      <button class="kippBtn" data-anzahl="3">3</button>
-      <button class="kippBtn" data-anzahl="4">4</button>
-      <button class="kippBtn" data-anzahl="5">5</button>
-      <button class="kippBtn" data-anzahl="6">6</button>
+      <button class="kippBtn" style="width:52px;font-size:20px;background:linear-gradient(180deg,#606060 0%,#404040 100%);color:#c0b8a8;border-color:#808080;" data-anzahl="1">1</button>
+      <button class="kippBtn" style="width:52px;font-size:20px;background:linear-gradient(180deg,#606060 0%,#404040 100%);color:#c0b8a8;border-color:#808080;" data-anzahl="2">2</button>
+      <button class="kippBtn" style="width:52px;font-size:20px;background:linear-gradient(180deg,#606060 0%,#404040 100%);color:#c0b8a8;border-color:#808080;" data-anzahl="3">3</button>
+      <button class="kippBtn" style="width:52px;font-size:20px;background:linear-gradient(180deg,#606060 0%,#404040 100%);color:#c0b8a8;border-color:#808080;" data-anzahl="4">4</button>
+      <button class="kippBtn" style="width:52px;font-size:20px;background:linear-gradient(180deg,#606060 0%,#404040 100%);color:#c0b8a8;border-color:#808080;" data-anzahl="5">5</button>
+      <button class="kippBtn" style="width:52px;font-size:20px;background:linear-gradient(180deg,#606060 0%,#404040 100%);color:#c0b8a8;border-color:#808080;" data-anzahl="6">6</button>
     </div>
   </div>
 
@@ -323,20 +320,22 @@
     // =========================
     // BELEUCHTUNG
     // =========================
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
-    scene.add(ambientLight);
+    // Zusätzliche Pause-Lichter (von allen Seiten, subtil)
+    const pauseLights = [
+      new THREE.DirectionalLight(0xffffff, 0.25), // links
+      new THREE.DirectionalLight(0xffffff, 0.25), // rechts
+      new THREE.DirectionalLight(0xffffff, 0.2),  // hinten
+      new THREE.DirectionalLight(0xffffff, 0.15)  // unten
+    ];
+    pauseLights[0].position.set(-3, 2, 1);
+    pauseLights[1].position.set(3, 2, 1);
+    pauseLights[2].position.set(0, 2, -3);
+    pauseLights[3].position.set(0, -1, 2);
+    pauseLights.forEach(l => { l.visible = false; scene.add(l); });
 
-    const mainLight = new THREE.DirectionalLight(0xffffff, 1.0);
-    mainLight.position.set(-0.15625, 8.708, -0.46875);
-    mainLight.castShadow = true;
-    mainLight.shadow.mapSize.width = 2048;
-    mainLight.shadow.mapSize.height = 2048;
-    mainLight.shadow.camera.near = 0.1;
-    mainLight.shadow.camera.far = 20;
-    mainLight.shadow.camera.left = -3;
-    mainLight.shadow.camera.right = 3;
-    mainLight.shadow.camera.top = 3;
-    mainLight.shadow.camera.bottom = -3;
+    const mainLight = new THREE.DirectionalLight(0xffffff, 0.6);
+    mainLight.position.set(0, 8.708, -0.46875);
+    mainLight.castShadow = false;
     scene.add(mainLight);
 
     const fillLight = new THREE.DirectionalLight(0xffffff, 0.2);
@@ -348,7 +347,7 @@
     // =========================
     const tableGeometry = new THREE.PlaneGeometry(5, 5);
     const tableMaterial = new THREE.MeshStandardMaterial({
-      color: 0x2a1810,
+      color: 0x000000,
       roughness: 0.8,
       metalness: 0.1
     });
@@ -377,6 +376,67 @@
     gridHelper2.material.opacity = 0.3;
     gridHelper2.material.transparent = true;
     scene.add(gridHelper2);
+
+    // Kärtchen auf dem Spieltisch (π1, orange Raster)
+    const cardWidth = 0.15625;   // 1 Zelle
+    const cardHeight = 0.3125;   // 2 Zellen
+    const cardGap = (1.25 - 6 * cardWidth) / 5; // 6 Karten auf 8 Zellen verteilt
+    const cardY = 0.001 + 0.002; // auf π1
+    const cardZ = 0.109375 + 4 * 0.15625 + 0.15625; // 4 Zeilen südlich von X-Achse, Kartenmitte
+
+    const totalCardsWidth = 8 * cardWidth; // 8 Zellen
+    const cardStartX = -totalCardsWidth / 2 + cardWidth / 2;
+
+    const gameCards = [];
+    for (let i = 0; i < 6; i++) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 85;
+      canvas.height = 170;
+      const ctx = canvas.getContext('2d');
+      // Platzhalter: oben grau, unten beige
+      ctx.fillStyle = '#888888';
+      ctx.fillRect(0, 0, 85, 85);
+      ctx.fillStyle = '#a08060';
+      ctx.fillRect(0, 85, 85, 85);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      const geo = new THREE.PlaneGeometry(cardWidth, cardHeight);
+      const mat = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.8, metalness: 0.0, side: THREE.DoubleSide });
+      const plane = new THREE.Mesh(geo, mat);
+      plane.rotation.x = -Math.PI / 2;
+      plane.position.set(cardStartX + i * (cardWidth + cardGap), cardY, cardZ);
+      plane.receiveShadow = true;
+      scene.add(plane);
+      plane.visible = false;
+
+      gameCards.push({ mesh: plane, canvas: canvas, ctx: ctx, texture: texture });
+    }
+    // =========================
+    // GRADIENT SCHATTEN ÜBER KÄRTCHEN
+    // =========================
+    // Kärtchen: X ±0.625, Z von 0.734375 bis 1.046875
+    const shadowGradCanvas = document.createElement('canvas');
+    shadowGradCanvas.width = 512;
+    shadowGradCanvas.height = 512;
+    const sgCtx = shadowGradCanvas.getContext('2d');
+    const grad = sgCtx.createLinearGradient(0, 0, 0, 512); // oben nach unten
+    grad.addColorStop(0, 'rgba(0, 0, 0, 0.5)');   // Nord: schwarz
+    grad.addColorStop(0.5, 'rgba(0, 0, 0, 0.0)'); // Mitte: transparent
+    grad.addColorStop(1, 'rgba(0, 0, 0, 0.0)');   // Süd: transparent
+    sgCtx.fillStyle = grad;
+    sgCtx.fillRect(0, 0, 512, 512);
+
+    const shadowGradTexture = new THREE.CanvasTexture(shadowGradCanvas);
+    const shadowGradW = 1.25;    // 8 Zellen
+    const shadowGradH = 0.3125;  // 2 Zellen = Kärtchenhöhe
+    const shadowGradGeo = new THREE.PlaneGeometry(shadowGradW, shadowGradH);
+    const shadowGradMat = new THREE.MeshBasicMaterial({ map: shadowGradTexture, transparent: true });
+    const shadowGradPlane = new THREE.Mesh(shadowGradGeo, shadowGradMat);
+    shadowGradPlane.rotation.x = -Math.PI / 2;
+    shadowGradPlane.position.set(0, 0.004, 0.890625); // cardZ
+    shadowGradPlane.visible = false;
+    scene.add(shadowGradPlane);
+
 
     // =========================
     // ACHSEN (X und Z)
@@ -528,6 +588,50 @@
     scene.add(eastFrame);
 
     // =========================
+    // RAHMEN-KANTEN 6px silbergrau inline
+    // =========================
+    const lineW = 4 * (2.5 / 720); // 4px in Three.js
+    const lineThick = 0.002;
+    const lineY = frameHeight + frameThickness / 2 + 0.0005;
+    const lineMat = new THREE.MeshBasicMaterial({ color: 0x606060 });
+
+    // Äußere Kanten des Rahmens
+    const outerN = wallInnerNorth - frameWidth; // -0.515625
+    const outerS = wallInnerSouth + frameWidth; // 0.736125
+    const outerW = wallInnerWest - frameWidth;  // -0.625
+    const outerE = wallInnerEast + frameWidth;  // 0.625
+    const outerMidZ = (outerN + outerS) / 2;
+
+    // Äußere Perimeter: N/S/W/E inline
+    const outerLines = [
+      { geo: new THREE.BoxGeometry(1.25, lineThick, lineW),                pos: [0, lineY, outerN + lineW/2] },  // N außen
+      { geo: new THREE.BoxGeometry(1.25, lineThick, lineW),                pos: [0, lineY, outerS - lineW/2] },  // S außen
+      { geo: new THREE.BoxGeometry(lineW, lineThick, outerS - outerN),     pos: [outerW + lineW/2, lineY, outerMidZ] }, // W außen
+      { geo: new THREE.BoxGeometry(lineW, lineThick, outerS - outerN),     pos: [outerE - lineW/2, lineY, outerMidZ] }  // E außen
+    ];
+    outerLines.forEach(l => {
+      const m = new THREE.Mesh(l.geo, lineMat);
+      m.position.set(...l.pos);
+      scene.add(m);
+    });
+
+    // Innere Kanten (Innenausschnitt)
+    const innerMidZ = (wallInnerNorth + wallInnerSouth) / 2;
+    const innerSpanZ = wallInnerSouth - wallInnerNorth;
+
+    const innerLines = [
+      { geo: new THREE.BoxGeometry(0.9375 + 2 * lineW, lineThick, lineW),  pos: [0, lineY, wallInnerNorth - lineW/2] }, // N innen
+      { geo: new THREE.BoxGeometry(0.9375 + 2 * lineW, lineThick, lineW),  pos: [0, lineY, wallInnerSouth + lineW/2] }, // S innen
+      { geo: new THREE.BoxGeometry(lineW, lineThick, innerSpanZ),         pos: [wallInnerWest - lineW/2, lineY, innerMidZ] }, // W innen
+      { geo: new THREE.BoxGeometry(lineW, lineThick, innerSpanZ),         pos: [wallInnerEast + lineW/2, lineY, innerMidZ] }  // E innen
+    ];
+    innerLines.forEach(l => {
+      const m = new THREE.Mesh(l.geo, lineMat);
+      m.position.set(...l.pos);
+      scene.add(m);
+    });
+
+    // =========================
     // FARBQUADRATE AUF RAHMEN
     // =========================
     const colorY = frameHeight + frameThickness / 2 + 0.001; // Direkt auf Rahmen-Oberfläche
@@ -554,46 +658,52 @@
 
     const colorSqSize = cellSize * 42 / 45; // 42px in Three.js-Einheiten
 
-    function addColorSquare(x, z, color) {
+    const colorSquareMeshes = {};
+
+    function addColorSquare(x, z, color, key) {
       const geo = new THREE.BoxGeometry(colorSqSize, colorThick, colorSqSize);
       const mat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.8, metalness: 0.1 });
       const mesh = new THREE.Mesh(geo, mat);
       mesh.position.set(x, colorY, z);
       scene.add(mesh);
+      if (key) colorSquareMeshes[key] = mesh;
     }
 
     // Nord-Rahmen (Zeile 3)
     const nordZ = wallInnerNorth - frameWidth / 2;
-    addColorSquare(colX('C'), nordZ, COLORS.gruen);
-    addColorSquare(colX('D'), nordZ, COLORS.orange);
-    addColorSquare(colX('E'), nordZ, COLORS.orange);
-    addColorSquare(colX('F'), nordZ, COLORS.blau);
+    addColorSquare(colX('C'), nordZ, COLORS.gruen, 'Nord_C');
+    addColorSquare(colX('D'), nordZ, COLORS.orange, 'Nord_D');
+    addColorSquare(colX('E'), nordZ, COLORS.orange, 'Nord_E');
+    addColorSquare(colX('F'), nordZ, COLORS.blau, 'Nord_F');
 
     // Süd-Rahmen (Zeile 10)
     const südZ = wallInnerSouth + frameWidth / 2;
-    addColorSquare(colX('C'), südZ, COLORS.gruen);
-    addColorSquare(colX('D'), südZ, COLORS.violett);
-    addColorSquare(colX('E'), südZ, COLORS.violett);
-    addColorSquare(colX('F'), südZ, COLORS.blau);
+    addColorSquare(colX('C'), südZ, COLORS.gruen, 'Süd_C');
+    addColorSquare(colX('D'), südZ, COLORS.violett, 'Süd_D');
+    addColorSquare(colX('E'), südZ, COLORS.violett, 'Süd_E');
+    addColorSquare(colX('F'), südZ, COLORS.blau, 'Süd_F');
 
     // West-Rahmen (Spalte A): 5↔8 getauscht
     const westX = wallInnerWest - frameWidth / 2;
-    addColorSquare(westX, rowZ(5), COLORS.violett);
-    addColorSquare(westX, rowZ(6), COLORS.blau);
-    addColorSquare(westX, rowZ(7), COLORS.blau);
-    addColorSquare(westX, rowZ(8), COLORS.orange);
+    addColorSquare(westX, rowZ(5), COLORS.violett, 'West_5');
+    addColorSquare(westX, rowZ(6), COLORS.blau, 'West_6');
+    addColorSquare(westX, rowZ(7), COLORS.blau, 'West_7');
+    addColorSquare(westX, rowZ(8), COLORS.orange, 'West_8');
 
     // Ost-Rahmen (Spalte H)
     const ostX = wallInnerEast + frameWidth / 2;
-    addColorSquare(ostX, rowZ(5), COLORS.violett);
-    addColorSquare(ostX, rowZ(6), COLORS.gruen);
-    addColorSquare(ostX, rowZ(7), COLORS.gruen);
-    addColorSquare(ostX, rowZ(8), COLORS.orange);
+    addColorSquare(ostX, rowZ(5), COLORS.violett, 'Ost_5');
+    addColorSquare(ostX, rowZ(6), COLORS.gruen, 'Ost_6');
+    addColorSquare(ostX, rowZ(7), COLORS.gruen, 'Ost_7');
+    addColorSquare(ostX, rowZ(8), COLORS.orange, 'Ost_8');
 
 
     // =========================
     // WÜRFEL mit 3x3 Grid-Textur
     // =========================
+    // Würfel-Textur WebP
+    const cubeTexImg = new Image();
+    cubeTexImg.src = 'data:image/webp;base64,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';
     const cubeSize = 0.46875;
 
     // Randomdeck 1-12 mischen
@@ -613,16 +723,19 @@
     // deck[0-3] → f0 Slots, deck[4-7] → f1 Slots, deck[8-11] → f2 Slots
 
     // Canvas-Textur: 3x3 Gitter, slotMap = { "row,col": { val, rot } }
-    function createFaceTexture(slotMap) {
+    function createFaceTexture(slotMap, imgRotation) {
       const canvas = document.createElement('canvas');
       canvas.width = 256;
       canvas.height = 256;
       const ctx = canvas.getContext('2d');
       const cell = 256 / 3;
 
-      // Bambusfarbe Grundfläche
-      ctx.fillStyle = '#a08060';
-      ctx.fillRect(0, 0, 256, 256);
+      // Würfel-Textur als Hintergrund (optional rotiert, Sättigung reduziert)
+      ctx.save();
+      ctx.translate(128, 128);
+      if (imgRotation) ctx.rotate(imgRotation);
+      ctx.drawImage(cubeTexImg, -128, -128, 256, 256);
+      ctx.restore();
 
       // Slot-Zellen beschriften
       ctx.fillStyle = '#2a1810';
@@ -667,9 +780,9 @@
       return canvas;
     }
 
-    function mat(slotMap) {
+    function mat(slotMap, imgRotation) {
       return new THREE.MeshStandardMaterial({
-        map: new THREE.CanvasTexture(createFaceTexture(slotMap || {})),
+        map: new THREE.CanvasTexture(createFaceTexture(slotMap || {}, imgRotation)),
         metalness: 0.3, roughness: 0.7
       });
     }
@@ -679,46 +792,50 @@
     // f2 (+Y): S1,S2 von Süden lesbar (0), S3,S4 von Westen lesbar (-π/2)
     // f0 (+Z): S1,S2 von Westen lesbar (-π/2), S3,S4 stehen Kopf (π)
     // f1 (-X): S1,S2 stehen Kopf (π), S3,S4 von Süden lesbar (π/2)
-    const cubeMaterial = [
-      mat(null),            // [0] +X  – leer
-      mat({                 // [1] -X  = f1
-        '0,0': { val: deck[4],  rot: Math.PI },       // S1 – Kopf
-        '0,1': { val: deck[5],  rot: Math.PI },       // S2 – Kopf
-        '1,2': { val: deck[6],  rot: -Math.PI / 2 },   // S3
-        '2,2': { val: deck[7],  rot: -Math.PI / 2 }    // S4
-      }),
-      mat({                 // [2] +Y  = f2
-        '2,2': { val: deck[8],  rot: 0 },              // S1 – von Süden lesbar
-        '2,1': { val: deck[9],  rot: 0 },              // S2 – von Süden lesbar
-        '1,0': { val: deck[10], rot: Math.PI / 2 },    // S3
-        '0,0': { val: deck[11], rot: Math.PI / 2 }     // S4
-      }),
-      mat(null),            // [3] -Y  – leer
-      mat({                 // [4] +Z  = f0
-        '2,0': { val: deck[0],  rot: Math.PI / 2 },    // S1
-        '1,0': { val: deck[1],  rot: Math.PI / 2 },    // S2
-        '0,1': { val: deck[2],  rot: Math.PI },         // S3 – Kopf
-        '0,2': { val: deck[3],  rot: Math.PI }          // S4 – Kopf
-      }),
-      mat(null)             // [5] -Z  – leer
-    ];
-
+    let cubeMaterial = [];
     const cubeGeometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
-    
     const offset = cubeSize / 2;
 
     // =========================
     // KANTEN-KIPP-WÜRFEL
     // =========================
     const kipGroup = new THREE.Group();
-    kipGroup.visible = true; // Direkt sichtbar, Phase 1 entfernt
+    kipGroup.visible = true;
     scene.add(kipGroup);
     
-    const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+    const cube = new THREE.Mesh(cubeGeometry, []);
     cube.position.set(-offset, offset, 0.109375 + offset);
     cube.castShadow = true;
     cube.receiveShadow = true;
     kipGroup.add(cube);
+
+    // Materialien erst wenn Textur-Image geladen
+    cubeTexImg.onload = function() {
+      cubeMaterial = [
+        mat(null),            // [0] +X  – leer
+        mat({                 // [1] -X  = f1
+          '0,0': { val: deck[4],  rot: Math.PI },
+          '0,1': { val: deck[5],  rot: Math.PI },
+          '1,2': { val: deck[6],  rot: -Math.PI / 2 },
+          '2,2': { val: deck[7],  rot: -Math.PI / 2 }
+        }, Math.PI / 2),
+        mat({                 // [2] +Y  = f2
+          '2,2': { val: deck[8],  rot: 0 },
+          '2,1': { val: deck[9],  rot: 0 },
+          '1,0': { val: deck[10], rot: Math.PI / 2 },
+          '0,0': { val: deck[11], rot: Math.PI / 2 }
+        }, -Math.PI / 2),
+        mat(null),            // [3] -Y  – leer
+        mat({                 // [4] +Z  = f0
+          '2,0': { val: deck[0],  rot: Math.PI / 2 },
+          '1,0': { val: deck[1],  rot: Math.PI / 2 },
+          '0,1': { val: deck[2],  rot: Math.PI },
+          '0,2': { val: deck[3],  rot: Math.PI }
+        }),
+        mat(null)             // [5] -Z  – leer
+      ];
+      cube.material = cubeMaterial;
+    };
 
     // Grüne Markierung - Obere Ostkante
     const edgeGeometry = new THREE.CylinderGeometry(0.008, 0.008, cubeSize, 8);
@@ -771,6 +888,351 @@
     const backButton = document.getElementById('backButton');
     const kippButtons = document.getElementById('kippButtons');
 
+    // =========================
+    // SPIELLOGIK: Treffer-Prüfung
+    // =========================
+    let randColor = null;
+    let randZahl = null;
+    let topFace = 'f2'; // Anfangslage beim Spieleintritt
+
+    function advanceTopFace() {
+      const cw  = { f2: 'f0', f0: 'f1', f1: 'f2' };
+      const ccw = { f2: 'f1', f1: 'f0', f0: 'f2' };
+      topFace = (kippDirection === 'cw') ? cw[topFace] : ccw[topFace];
+    }
+
+    // Welche Nachbarfarbe hat jeder Slot pro Quadrant
+    const SLOT_NEIGHBOR_COLORS = {
+      0: { S1: 'blau',    S2: 'violett', S3: 'gruen',   S4: 'orange'  },
+      1: { S1: 'orange',  S2: 'blau',    S3: 'violett', S4: 'gruen'   },
+      2: { S1: 'gruen',   S2: 'orange',  S3: 'blau',    S4: 'violett' },
+      3: { S1: 'violett', S2: 'gruen',   S3: 'orange',  S4: 'blau'    }
+    };
+
+    // 4 Farbfelder pro Quadrant (für Nicht-Treffer-Animation)
+    const QUADRANT_COLORS = {
+      0: ['Nord_C', 'Nord_D', 'West_5', 'West_6'],
+      1: ['Nord_E', 'Nord_F', 'Ost_5',  'Ost_6'],
+      2: ['Süd_E',  'Süd_F',  'Ost_7',  'Ost_8'],
+      3: ['Süd_C',  'Süd_D',  'West_7', 'West_8']
+    };
+
+    // Material-Index pro Face (BoxGeometry: [+X,-X,+Y,-Y,+Z,-Z])
+    const TOP_FACE_MAT_IDX = { f0: 4, f1: 1, f2: 2 };
+
+    // Desätturierte Versionen der Spielfarben für das Kärtchen
+    const DESAT_COLORS = {
+      violett: '#6b5a6b',
+      blau:    '#5a6b7b',
+      gruen:   '#5b7b6b',
+      orange:  '#7b6b5a'
+    };
+
+    function checkTreffer() {
+      const faceOffset = { f0: 0, f1: 4, f2: 8 };
+      const off = faceOffset[topFace];
+      const visible = { S1: deck[off], S2: deck[off+1], S3: deck[off+2], S4: deck[off+3] };
+
+      // Ist randZahl sichtbar?
+      let hitSlot = null;
+      for (const [slot, val] of Object.entries(visible)) {
+        if (val === randZahl) { hitSlot = slot; break; }
+      }
+      if (!hitSlot) return false;
+
+      // Nachbarfarbe prüfen
+      const neighborColor = SLOT_NEIGHBOR_COLORS[currentQuadrant][hitSlot];
+      return neighborColor === randColor.name;
+    }
+
+    // Generische Animation eines Wertes über Zeit
+    function animateVal(from, to, duration, onUpdate, onFinish) {
+      const start = performance.now();
+      function tick(now) {
+        const t = Math.min((now - start) / duration, 1);
+        const eased = t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2, 2)/2;
+        onUpdate(from + (to - from) * eased);
+        if (t < 1) requestAnimationFrame(tick);
+        else if (onFinish) onFinish();
+      }
+      requestAnimationFrame(tick);
+    }
+
+    let activeCardIdx = 0;
+    const bereitsGetroffen = new Set(); // "zahl_farbe" Kombinationen die bereits Treffer waren
+
+    function fillCard(idx) {
+      const GAME_COLORS = [
+        { name: 'violett', hex: '#a41b85' },
+        { name: 'blau',    hex: '#006bb3' },
+        { name: 'gruen',   hex: '#00a652' },
+        { name: 'orange',  hex: '#e67814' }
+      ];
+      // Aktuelle Würfelfläche: 4 Zahlen mit Nachbarfarben → dürfen nicht kommen
+      function getCurrentWürfelKombis() {
+        const faceOffset = { f0: 0, f1: 4, f2: 8 };
+        const off = faceOffset[topFace];
+        const slots = ['S1', 'S2', 'S3', 'S4'];
+        const kombi = new Set();
+        slots.forEach((slot, i) => {
+          const zahl = deck[off + i];
+          const farbe = SLOT_NEIGHBOR_COLORS[currentQuadrant][slot];
+          kombi.add(zahl + '_' + farbe);
+        });
+        return kombi;
+      }
+
+      const wurzelKombis = getCurrentWürfelKombis();
+
+      // Neue Kombination bis eine nicht ausgeschlossen ist
+      do {
+        randColor = GAME_COLORS[Math.floor(Math.random() * 4)];
+        randZahl = Math.floor(Math.random() * 12) + 1;
+      } while (bereitsGetroffen.has(randZahl + '_' + randColor.name) || wurzelKombis.has(randZahl + '_' + randColor.name));
+
+      const card = gameCards[idx];
+      card.ctx.fillStyle = randColor.hex;
+      card.ctx.fillRect(0, 0, 85, 85);
+      card.ctx.fillStyle = '#a08060';
+      card.ctx.fillRect(0, 85, 85, 85);
+      const displayText = randZahl + ((randZahl === 6 || randZahl === 9) ? '.' : '');
+      card.ctx.fillStyle = '#2a1810';
+      card.ctx.font = 'bold 56px Arial';
+      card.ctx.textAlign = 'center';
+      card.ctx.textBaseline = 'middle';
+      card.ctx.fillText(displayText, 42, 128);
+      card.texture.needsUpdate = true;
+      card.mesh.scale.set(1, 1, 1);
+      card.mesh.material.opacity = 1.0;
+    }
+
+    function onRunde() {
+      activeCardIdx++;
+      if (activeCardIdx === 3) {
+        // Nach drittem Kärtchen: Würfel auf Ecke stelken, dann Pause-Phase
+        setButtonsDisabled(true);
+        document.getElementById('richtungButtons').classList.add('hidden');
+        kippButtons.classList.add('hidden');
+        animateAufEcke().then(() => {
+          startPausePhase();
+        });
+        return;
+      }
+      if (activeCardIdx < gameCards.length) {
+        fillCard(activeCardIdx);
+        setButtonsDisabled(false);
+      }
+    }
+
+    function startPausePhase() {
+      gamePhase = 'pause';
+      gameCards.forEach(c => c.mesh.visible = false);
+      shadowGradPlane.visible = false;
+      pauseLights.forEach(l => l.visible = true);
+
+      // Pause-Pivot auf der Ecke erstellen
+      const cornerPos = new THREE.Vector3(0, 0, 0.109375);
+      pausePivotGroup = new THREE.Group();
+      pausePivotGroup.position.copy(cornerPos);
+      kipGroup.add(pausePivotGroup);
+
+      cube.updateMatrixWorld();
+      const wp = new THREE.Vector3();
+      cube.getWorldPosition(wp);
+      const wq = new THREE.Quaternion();
+      cube.getWorldQuaternion(wq);
+
+      kipGroup.remove(cube);
+      cube.position.copy(wp.clone().sub(cornerPos));
+      cube.quaternion.copy(wq);
+      pausePivotGroup.add(cube);
+
+      pauseAlpha = 0;
+      pauseBeta  = 0;
+      pauseDragActive = false;
+
+      hintText.textContent = 'SCHAUEN & MERKEN';
+      hintText.style.display = 'block';
+      actionButton.textContent = 'weiter';
+      actionButton.style.display = 'block';
+
+      // Zähler bis 30
+      let elapsed = 0;
+      countdown.textContent = elapsed;
+      countdown.style.display = 'block';
+      const pauseTimer = setInterval(() => {
+        elapsed++;
+        countdown.textContent = elapsed;
+        if (elapsed >= 30) {
+          clearInterval(pauseTimer);
+        }
+      }, 1000);
+    }
+
+    function endPausePhase() {
+      gamePhase = 'spielen';
+      hintText.style.display = 'none';
+      actionButton.style.display = 'none';
+      countdown.style.display = 'none';
+
+      // Pause-Pivot auflösen
+      if (pausePivotGroup) {
+        pausePivotGroup.remove(cube);
+        kipGroup.remove(pausePivotGroup);
+        pausePivotGroup = null;
+      }
+
+      // Würfel auf Startlage resetten (Q3, f2)
+      cube.position.set(-offset, offset, 0.109375 + offset);
+      cube.quaternion.identity();
+      kipGroup.add(cube);
+      currentQuadrant = 3;
+      topFace = 'f2';
+      pauseAlpha = 0;
+      pauseBeta  = 0;
+
+      // Buttons wieder zeigen
+      document.getElementById('richtungButtons').classList.remove('hidden');
+      kippButtons.classList.remove('hidden');
+
+      // Kärtchen wieder sichtbar
+      gameCards.forEach(c => c.mesh.visible = true);
+      shadowGradPlane.visible = true;
+      pauseLights.forEach(l => l.visible = false);
+
+      // 4. Kärtchen befüllen
+      fillCard(activeCardIdx);
+      setButtonsDisabled(false);
+    }
+
+    async function animateAufEcke() {
+      const cornerPos = new THREE.Vector3(0, 0, 0.109375); // Die feste Ecke
+      const duration = 1200;
+
+      // Cube aus kipGroup nehmen, in pivotGroup bei der Ecke platzieren
+      const pivotGroup = new THREE.Group();
+      pivotGroup.position.copy(cornerPos);
+      kipGroup.add(pivotGroup);
+
+      cube.updateMatrixWorld();
+      const cubeWorldPos = new THREE.Vector3();
+      cube.getWorldPosition(cubeWorldPos);
+      const cubeWorldQuat = new THREE.Quaternion();
+      cube.getWorldQuaternion(cubeWorldQuat);
+
+      kipGroup.remove(cube);
+      cube.position.copy(cubeWorldPos.clone().sub(cornerPos));
+      cube.quaternion.copy(cubeWorldQuat);
+      pivotGroup.add(cube);
+
+      // Ziel-Rotation: Vektor von Ecke zum Würfelmittelpunkt soll nach +Y zeigen
+      const relativePos = cube.position.clone().normalize();
+      const targetDir = new THREE.Vector3(0, 1, 0);
+      const targetQuat = new THREE.Quaternion().setFromUnitVectors(relativePos, targetDir);
+
+      const startTime = Date.now();
+
+      return new Promise((resolve) => {
+        function animate() {
+          const elapsed = Date.now() - startTime;
+          const progress = Math.min(elapsed / duration, 1);
+          const eased = progress < 0.5
+            ? 2 * progress * progress
+            : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+
+          const currentQuat = new THREE.Quaternion().copy(new THREE.Quaternion()).slerp(targetQuat, eased);
+          pivotGroup.quaternion.copy(currentQuat);
+
+          if (progress < 1) {
+            requestAnimationFrame(animate);
+          } else {
+            // Cleanup: wie finalizeKipp
+            cube.updateMatrixWorld();
+            const newWorldPos = new THREE.Vector3();
+            cube.getWorldPosition(newWorldPos);
+            const newWorldQuat = new THREE.Quaternion();
+            cube.getWorldQuaternion(newWorldQuat);
+
+            pivotGroup.remove(cube);
+            kipGroup.remove(pivotGroup);
+
+            cube.position.copy(newWorldPos);
+            cube.quaternion.copy(newWorldQuat);
+            kipGroup.add(cube);
+
+            resolve();
+          }
+        }
+        animate();
+      });
+    }
+
+    function animateTreffer() {
+      const card = gameCards[activeCardIdx];
+      const mesh = card.mesh;
+      const origScale = 1.0;
+      const targetScale = 1.7;
+
+      // 1. Kärtchen groß machen
+      animateVal(origScale, targetScale, 350, (s) => {
+        mesh.scale.set(s, s, s);
+      }, () => {
+        // 2. Groß bleiben für 2 Sekunden
+        setTimeout(() => {
+          // 3. Zurück auf Normalgröße
+          animateVal(targetScale, origScale, 350, (s) => {
+            mesh.scale.set(s, s, s);
+          }, () => {
+            onRunde();
+          });
+        }, 2000);
+      });
+    }
+
+    function animateNichtTreffer() {
+      // 1. Würfel-Oberseite langsam dunkelgrau und zurück (2s)
+      const matIdx = TOP_FACE_MAT_IDX[topFace];
+      const topMat = cube.material[matIdx];
+      const origColor = topMat.color.clone();
+      // Phase 1: normal → dunkelgrau (1s)
+      animateVal(0, 1, 1000, (t) => {
+        topMat.color.copy(origColor).lerp(new THREE.Color(0x303030), t);
+      }, () => {
+        // Phase 2: dunkelgrau → normal (1s)
+        animateVal(0, 1, 1000, (t) => {
+          topMat.color.copy(new THREE.Color(0x303030)).lerp(origColor, t);
+        }, () => {
+          onRunde();
+        });
+      });
+
+      // 2. 4 Farbfelder des Quadranten kurz transparent
+      const keys = QUADRANT_COLORS[currentQuadrant];
+      keys.forEach(key => {
+        const m = colorSquareMeshes[key];
+        if (!m) return;
+        m.material.transparent = true;
+        m.material.opacity = 0.12;
+        setTimeout(() => {
+          animateVal(0.12, 1.0, 350, (op) => { m.material.opacity = op; });
+        }, 250);
+      });
+
+      // 3. Kärtchen desätturieren
+      const card = gameCards[activeCardIdx];
+      card.ctx.fillStyle = DESAT_COLORS[randColor.name];
+      card.ctx.fillRect(0, 0, 85, 85);
+      card.ctx.fillStyle = '#807868';
+      card.ctx.fillRect(0, 85, 85, 85);
+      const displayText = randZahl + ((randZahl === 6 || randZahl === 9) ? '.' : '');
+      card.ctx.fillStyle = '#5a5a5a';
+      card.ctx.font = 'bold 56px Arial';
+      card.ctx.textAlign = 'center';
+      card.ctx.textBaseline = 'middle';
+      card.ctx.fillText(displayText, 42, 128);
+      card.texture.needsUpdate = true;
+    }
+
     let gamePhase = 'kippen'; // Startet direkt in Phase 2
     let currentMode = 'kanten'; // Startet direkt im Kanten-Modus
     let kippCount = 0;
@@ -781,14 +1243,14 @@
     actionButton.textContent = 'weiter';
     
     function startCountdown(onFinish) {
-      let timeLeft = 60;
-      countdown.textContent = timeLeft;
+      let elapsed = 0;
+      countdown.textContent = elapsed;
       countdown.style.display = 'block';
       
       countdownTimer = setInterval(() => {
-        timeLeft--;
-        countdown.textContent = timeLeft;
-        if (timeLeft <= 0) {
+        elapsed++;
+        countdown.textContent = elapsed;
+        if (elapsed >= 60) {
           stopCountdown();
           if (onFinish) onFinish();
         }
@@ -803,32 +1265,56 @@
       countdown.style.display = 'none';
     }
     
-    // Countdown direkt für Phase 2 starten
-    startCountdown(() => {
-      if (gamePhase === 'kippen') {
-        phaseKippenToSpielen();
-      }
-    });
+    // Zähler anzeigen aber noch nicht starten (startet bei erster Berührung)
+    countdown.textContent = 0;
+    countdown.style.display = 'block';
+    let timerStarted = false;
     
     function phaseKippenToSpielen() {
       gamePhase = 'spielen';
-      currentMode = 'kanten'; // Bleibt im Kanten-Modus
+      currentMode = 'kanten';
       
+      // Würfel auf Startlage resetten (Q3, f2 oben)
+      cube.position.set(-offset, offset, 0.109375 + offset);
+      cube.rotation.set(0, 0, 0);
+      currentQuadrant = 3;
+      topFace = 'f2';
+
       // Countdown STOPPEN
       stopCountdown();
       
       // UI umschalten
       hintText.style.display = 'none';
       actionButton.style.display = 'none';
-      document.getElementById('placeholderRow').classList.remove('hidden');
-      document.getElementById('kippAnzahlText').classList.remove('hidden');
+      document.getElementById('placeholderRow').classList.add('hidden'); // wird durch Three.js Kärtchen ersetzt
+      document.getElementById('richtungButtons').classList.remove('hidden');
       kippButtons.classList.remove('hidden');
-      
+
+      // Random Farbe + Zahl generieren
+      const GAME_COLORS = [
+        { name: 'violett', hex: '#a41b85' },
+        { name: 'blau',    hex: '#006bb3' },
+        { name: 'gruen',   hex: '#00a652' },
+        { name: 'orange',  hex: '#e67814' }
+      ];
+      randColor = GAME_COLORS[Math.floor(Math.random() * 4)];
+      randZahl = Math.floor(Math.random() * 12) + 1;
+
+      // Kärtchen sichtbar machen
+      gameCards.forEach(c => c.mesh.visible = true);
+      shadowGradPlane.visible = true;
+
+      // Erstes Kärtchen befüllen
+      activeCardIdx = 0;
+      bereitsGetroffen.clear();
+      fillCard(0);
     }
     
     actionButton.addEventListener('click', () => {
       if (gamePhase === 'kippen') {
         phaseKippenToSpielen();
+      } else if (gamePhase === 'pause') {
+        endPausePhase();
       }
     });
 
@@ -845,19 +1331,22 @@
       actionButton.classList.remove('pulse');
       kippButtons.classList.add('hidden');
       document.getElementById('placeholderRow').classList.add('hidden');
-      document.getElementById('kippAnzahlText').classList.add('hidden');
+      document.getElementById('richtungButtons').classList.add('hidden');
+      
+      // Kärtchen verstecken
+      gameCards.forEach(c => c.mesh.visible = false);
+      shadowGradPlane.visible = false;
       
       // Würfel zurücksetzen zu Q3
       cube.position.set(-offset, offset, 0.109375 + offset);
       cube.rotation.set(0, 0, 0);
       currentQuadrant = 3;
+      topFace = 'f2'; // Anfangslage zurücksetzen
       
       // Countdown neu starten für Phase 2
-      startCountdown(() => {
-        if (gamePhase === 'kippen') {
-          phaseKippenToSpielen();
-        }
-      });
+      timerStarted = false;
+      countdown.textContent = 0;
+      countdown.style.display = 'block';
       
     });
 
@@ -880,6 +1369,62 @@
     let dragToQ = 0;
     let dragCurrentAngle = 0;
     const DRAG_SENSITIVITY = 150; // px für volle 90°
+
+    // =========================
+    // PAUSE-PHASE: Ecke-Drehinteraktion
+    // =========================
+    // 8 Ecken des Würfels nach body-diagonal-Rotation (Pivot = Ecke, vorberechnet)
+    const ECKE_CORNERS = [
+      [ 0.000000,  0.000000,  0.000000],
+      [ 0.369691,  0.270633, -0.099059],
+      [-0.270633,  0.270633, -0.270633],
+      [-0.099059,  0.270633,  0.369691],
+      [ 0.099059,  0.541266, -0.369691],
+      [ 0.270633,  0.541266,  0.270633],
+      [-0.369691,  0.541266,  0.099059],
+      [ 0.000000,  0.811899,  0.000000]
+    ];
+    // Frame-Grenzen relativ zum Pivot (0, 0, 0.109375)
+    const FRAME_SOUTH = 0.4705;   // wallInnerSouth - pivotZ
+    const FRAME_NORTH = 0.46875;  // pivotZ + wallInnerNorth (abs)
+    const FRAME_EAST  = 0.46875;
+    const FRAME_WEST  = 0.46875;
+
+    function isPausePoseValid(alpha, beta) {
+      const ca = Math.cos(alpha), sa = Math.sin(alpha);
+      const cb = Math.cos(beta),  sb = Math.sin(beta);
+      for (const [x, y, z] of ECKE_CORNERS) {
+        // Ry(β)
+        const x1 =  x * cb + z * sb;
+        const z1 = -x * sb + z * cb;
+        // Rx(α)
+        const z2 = y * sa + z1 * ca;
+        // Grenzen-Prüfung (x ändert sich durch Rx nicht)
+        if (x1 > FRAME_EAST || x1 < -FRAME_WEST) return false;
+        if (z2 > FRAME_SOUTH || z2 < -FRAME_NORTH) return false;
+      }
+      return true;
+    }
+
+    function getMaxAlpha(beta) {
+      if (!isPausePoseValid(0, beta)) return 0;
+      let lo = 0, hi = Math.PI / 6; // 30° als obere Suche
+      for (let i = 0; i < 20; i++) {
+        const mid = (lo + hi) / 2;
+        if (isPausePoseValid(mid, beta)) lo = mid; else hi = mid;
+      }
+      return lo;
+    }
+
+    let pausePivotGroup = null;
+    let pauseAlpha = 0;
+    let pauseBeta  = 0;
+    let pauseDragActive = false;
+    let pauseDragStartX = 0;
+    let pauseDragStartY = 0;
+    let pauseDragStartAlpha = 0;
+    let pauseDragStartBeta  = 0;
+    const PAUSE_SENSITIVITY = 200; // px für ~30°
 
     function getKippConfig(direction) {
       const configs = {
@@ -917,9 +1462,28 @@
     }
 
     renderer.domElement.addEventListener('touchstart', (e) => {
+      if (gamePhase === 'pause' && pausePivotGroup) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        pauseDragStartX = touch.clientX;
+        pauseDragStartY = touch.clientY;
+        pauseDragStartAlpha = pauseAlpha;
+        pauseDragStartBeta  = pauseBeta;
+        pauseDragActive = true;
+        return;
+      }
       if (currentMode === 'kanten' && gamePhase === 'kippen') {
         if (isAnimating) return;
         e.preventDefault();
+        // Zähler beim ersten Kipp starten
+        if (!timerStarted) {
+          timerStarted = true;
+          startCountdown(() => {
+            if (gamePhase === 'kippen') {
+              phaseKippenToSpielen();
+            }
+          });
+        }
         const touch = e.touches[0];
         swipeStartX = touch.clientX;
         swipeStartY = touch.clientY;
@@ -929,6 +1493,29 @@
     });
 
     renderer.domElement.addEventListener('touchmove', (e) => {
+      if (gamePhase === 'pause' && pauseDragActive && pausePivotGroup) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const dx = touch.clientX - pauseDragStartX;
+        const dy = touch.clientY - pauseDragStartY;
+
+        // β: X-Drag → Y-Rotation (links = positiv)
+        let newBeta  = pauseDragStartBeta  - (dx / PAUSE_SENSITIVITY) * (Math.PI / 6);
+        // α: Y-Drag nach unten → Tilt nach Süden
+        let newAlpha = pauseDragStartAlpha + (dy / PAUSE_SENSITIVITY) * (Math.PI / 6);
+        newAlpha = Math.max(0, newAlpha); // nur nach Süden
+
+        // α auf max bei gegebenem β clampen
+        const maxA = getMaxAlpha(newBeta);
+        newAlpha = Math.min(newAlpha, maxA);
+
+        pauseAlpha = newAlpha;
+        pauseBeta  = newBeta;
+
+        // Euler 'XYZ': erst Ry(β) drehen, dann Rx(α) tilten
+        pausePivotGroup.rotation.set(pauseAlpha, pauseBeta, 0, 'XYZ');
+        return;
+      }
       if (!isSwiping || isAnimating || gamePhase !== 'kippen' || currentMode !== 'kanten') return;
       e.preventDefault();
 
@@ -987,6 +1574,10 @@
     });
 
     renderer.domElement.addEventListener('touchend', () => {
+      if (gamePhase === 'pause') {
+        pauseDragActive = false;
+        return;
+      }
       isSwiping = false;
       if (!dragActive) return;
 
@@ -1184,8 +1775,6 @@
       const kipFactor = 1;
       
       
-      setButtonsDisabled(true);
-      
       for (let i = 0; i < steps; i++) {
         const tStep = (steps <= 1) ? 0 : (i / (steps - 1));
         const stepMul = lerp(1.0, STEP_MAX, tStep);
@@ -1195,39 +1784,126 @@
         
         
         let direction;
-        if (currentQuadrant === 0) direction = 'east';
-        else if (currentQuadrant === 1) direction = 'south_from_q1';
-        else if (currentQuadrant === 2) direction = 'west_from_q2';
-        else direction = 'north';
+        if (kippDirection === 'cw') {
+          if (currentQuadrant === 0) direction = 'east';
+          else if (currentQuadrant === 1) direction = 'south_from_q1';
+          else if (currentQuadrant === 2) direction = 'west_from_q2';
+          else direction = 'north'; // Q3
+        } else {
+          // CCW: umgekehrte Reihenfolge
+          if (currentQuadrant === 0) direction = 'south';
+          else if (currentQuadrant === 1) direction = 'west';
+          else if (currentQuadrant === 2) direction = 'north_from_q2';
+          else direction = 'east_from_q3'; // Q3
+        }
         
         await performKipp(direction, kipTime);
+        advanceTopFace();
         await sleep(holdTime);
       }
-      
-      setButtonsDisabled(false);
     }
 
     // =========================
+    // CW/CCW Richtung
+    let kippDirection = 'cw';
+    const cwBtn = document.getElementById('cwBtn');
+    const ccwBtn = document.getElementById('ccwBtn');
+
+    function updateRichtungButtons() {
+      if (kippDirection === 'cw') {
+        cwBtn.style.background = 'linear-gradient(180deg,#4a3e28 0%,#3a2e1c 100%)';
+        cwBtn.style.color = '#c0b870';
+        cwBtn.style.borderColor = '#d4b48c';
+        cwBtn.style.boxShadow = '0 0 8px rgba(212,180,140,0.6), 0 0 20px rgba(212,180,140,0.35)';
+        ccwBtn.style.background = 'linear-gradient(180deg,#404040 0%,#303030 100%)';
+        ccwBtn.style.color = '#c0b8a8';
+        ccwBtn.style.borderColor = '#808080';
+        ccwBtn.style.boxShadow = '';
+      } else {
+        ccwBtn.style.background = 'linear-gradient(180deg,#4a3e28 0%,#3a2e1c 100%)';
+        ccwBtn.style.color = '#c0b870';
+        ccwBtn.style.borderColor = '#d4b48c';
+        ccwBtn.style.boxShadow = '0 0 8px rgba(212,180,140,0.6), 0 0 20px rgba(212,180,140,0.35)';
+        cwBtn.style.background = 'linear-gradient(180deg,#404040 0%,#303030 100%)';
+        cwBtn.style.color = '#c0b8a8';
+        cwBtn.style.borderColor = '#808080';
+        cwBtn.style.boxShadow = '';
+      }
+    }
+    cwBtn.addEventListener('click', () => { kippDirection = 'cw'; cwBtn.classList.add('clicked'); ccwBtn.classList.remove('clicked'); updateRichtungButtons(); });
+    ccwBtn.addEventListener('click', () => { kippDirection = 'ccw'; ccwBtn.classList.add('clicked'); cwBtn.classList.remove('clicked'); updateRichtungButtons(); });
+
     // BUTTON HANDLER (nur aktiv in Phase 3)
     // =========================
     function setButtonsDisabled(disabled) {
       const buttons = document.querySelectorAll('.kippBtn');
       buttons.forEach(btn => {
         btn.disabled = disabled;
-        if (disabled) {
-          btn.classList.add('running');
-        } else {
-          btn.classList.remove('running');
+        btn.classList.remove('clicked');
+        if (!disabled) {
+          btn.style.background = 'linear-gradient(180deg,#606060 0%,#404040 100%)';
+          btn.style.color = '#c0b8a8';
+          btn.style.borderColor = '#808080';
+          btn.style.boxShadow = '';
         }
       });
+      if (!disabled) {
+        cwBtn.style.background = 'linear-gradient(180deg,#404040 0%,#303030 100%)';
+        cwBtn.style.color = '#c0b8a8';
+        cwBtn.style.borderColor = '#808080';
+        cwBtn.style.boxShadow = '';
+        ccwBtn.style.background = 'linear-gradient(180deg,#404040 0%,#303030 100%)';
+        ccwBtn.style.color = '#c0b8a8';
+        ccwBtn.style.borderColor = '#808080';
+        ccwBtn.style.boxShadow = '';
+      }
+
     }
 
     document.querySelectorAll('.kippBtn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        if (gamePhase !== 'spielen') return; // Nur in Phase 3 aktiv
+      btn.addEventListener('click', async () => {
+        if (gamePhase !== 'spielen') return;
+        if (btn.id === 'cwBtn' || btn.id === 'ccwBtn') return;
         
+        btn.style.background = 'linear-gradient(180deg,#4a3e28 0%,#3a2e1c 100%)';
+        btn.style.color = '#c0b870';
+        btn.style.borderColor = '#d4b48c';
+        btn.style.boxShadow = '0 0 8px rgba(212,180,140,0.6), 0 0 20px rgba(212,180,140,0.35)';
+
+        // Aktives Kärtchen auf Originalfarben zurücksetzen (falls vorher desätturiert)
+        const card = gameCards[activeCardIdx];
+        card.ctx.fillStyle = randColor.hex;
+        card.ctx.fillRect(0, 0, 85, 85);
+        card.ctx.fillStyle = '#a08060';
+        card.ctx.fillRect(0, 85, 85, 85);
+        const displayText = randZahl + ((randZahl === 6 || randZahl === 9) ? '.' : '');
+        card.ctx.fillStyle = '#2a1810';
+        card.ctx.font = 'bold 56px Arial';
+        card.ctx.textAlign = 'center';
+        card.ctx.textBaseline = 'middle';
+        card.ctx.fillText(displayText, 42, 128);
+        card.texture.needsUpdate = true;
+        card.mesh.scale.set(1, 1, 1);
+        card.mesh.material.opacity = 1.0;
+
         const anzahl = parseInt(btn.dataset.anzahl);
-        runKippSequence(anzahl);
+        setButtonsDisabled(true);
+        await runKippSequence(anzahl);
+
+        // Button zurück auf default
+        btn.style.background = 'linear-gradient(180deg,#606060 0%,#404040 100%)';
+        btn.style.color = '#c0b8a8';
+        btn.style.borderColor = '#808080';
+        btn.style.boxShadow = '';
+
+        // Treffer-Prüfung nach Kippzyklus
+        const treffer = checkTreffer();
+        if (treffer) {
+          bereitsGetroffen.add(randZahl + '_' + randColor.name);
+          animateTreffer();
+        } else {
+          animateNichtTreffer();
+        }
       });
     });
 
