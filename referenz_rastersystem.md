@@ -192,6 +192,239 @@ position: (0.48550, 0.234375, 0.1105)
 
 ---
 
+## Holz-Textur / Tisch-Material
+
+**Tisch-Geometrie:**
+```javascript
+const tableGeometry = new THREE.PlaneGeometry(5, 5);
+```
+
+**Holz-Textur:**
+- Format: JPEG Base64-embedded (30KB, 512×512 resized from 1024×1536)
+- Qualität: 85
+- Variable: `woodBase64`
+
+**Tisch-Material:**
+```javascript
+const tableMaterial = new THREE.MeshStandardMaterial({
+  map: woodTexture,
+  roughness: 0.8,
+  metalness: 0.1
+});
+```
+
+**Tisch-Position:**
+```javascript
+table.rotation.x = -Math.PI/2; // horizontal (π1)
+table.position.y = 0;          // auf π1
+table.receiveShadow = true;
+```
+
+**WICHTIG:** Die Holz-Textur liegt aktuell auf dem gesamten 5×5 table. Für bessere Darstellung sollte sie nur auf dem 6×6 Spielfeld-Innenbereich (0.9375 × 0.9375) angewendet werden.
+
+---
+
+## Kärtchen-System
+
+**Kärtchen-Maße:**
+```javascript
+const cardWidth = 0.15625;   // 1 Zelle
+const cardHeight = 0.3125;   // 2 Zellen
+```
+
+**Positionierung:**
+```javascript
+const cardY = 0.003;                             // auf π1 (0.001 + 0.002)
+const cardZ = 0.890625;                          // 4 Zeilen südlich + Kartenmitte
+// cardZ = 0.109375 + 4 × 0.15625 + 0.15625
+```
+
+**Verteilung:**
+- 6 Karten auf 8 Zellen verteilt (totalCardsWidth = 8 × 0.15625 = 1.25)
+- Gap zwischen Karten: `(1.25 - 6 × cardWidth) / 5`
+- Start X: `-0.625 + 0.078125` (cardWidth/2)
+- X-Positionen: `cardStartX + i × (cardWidth + cardGap)` für i=0..5
+
+**Canvas-Textur:**
+- Größe: 85×170 Pixel
+- Obere Hälfte: Grau (#888888)
+- Untere Hälfte: Beige (#a08060)
+- Material: `MeshStandardMaterial` mit `DoubleSide`
+- Rotation: `-Math.PI/2` (horizontal auf π1)
+
+**Schatten-Gradient über Kärtchen:**
+```javascript
+shadowGradPlane.position.set(0, 0.004, 0.890625); // auf cardZ
+// Breite: 1.25 (8 Zellen), Höhe: 0.3125 (2 Zellen)
+// Gradient: Nord schwarz (0.5 opacity) → Mitte/Süd transparent
+```
+
+---
+
+## Schwarzer Rahmen (Erweitert)
+
+**Rahmen-Dimensionen:**
+```javascript
+const frameHeight = 0.46875;    // 3 Zellen über π1
+const frameThickness = 0.02;    // Minimale Dicke in Y
+const frameWidth = 0.15625;     // 1 Zelle breit
+```
+
+**Rahmen-Material:**
+```javascript
+frameMaterial: MeshStandardMaterial({
+  color: 0x000000,     // Schwarz
+  roughness: 0.9,
+  metalness: 0.1
+})
+```
+
+**Rahmen-Positionen:**
+```javascript
+// Nord-Rahmen
+position: (0, 0.46875, wallInnerNorth - frameWidth/2)
+// = (0, 0.46875, -0.437500)
+
+// Süd-Rahmen
+position: (0, 0.46875, wallInnerSouth + frameWidth/2)
+// = (0, 0.46875, 0.658000)
+
+// West-Rahmen (6 Zellen lang = 0.9375)
+position: (wallInnerWest - frameWidth/2, 0.46875, 0.1105)
+// = (-0.546875, 0.46875, 0.1105)
+
+// Ost-Rahmen (6 Zellen lang = 0.9375)
+position: (wallInnerEast + frameWidth/2, 0.46875, 0.1105)
+// = (0.546875, 0.46875, 0.1105)
+```
+
+**Rahmen-Kanten (Linien):**
+- Breite: 4px = `4 × (2.5/720)` = 0.01388 Einheiten
+- Dicke: 0.002
+- Y-Position: `frameHeight + frameThickness/2 + 0.0005` = 0.4788
+- Material: Silbergrau (0x606060)
+
+**Äußere Perimeter:**
+- Nord: Z = -0.515625 (wallInnerNorth - frameWidth)
+- Süd: Z = 0.736125 (wallInnerSouth + frameWidth)
+- West: X = -0.625 (wallInnerWest - frameWidth)
+- Ost: X = 0.625 (wallInnerEast + frameWidth)
+
+**Innere Kanten:**
+- Nord: Z = -0.359375 (wallInnerNorth)
+- Süd: Z = 0.579875 (wallInnerSouth)
+- West: X = -0.46875 (wallInnerWest)
+- Ost: X = 0.46875 (wallInnerEast)
+
+---
+
+## Farbquadrate auf Rahmen
+
+**Farben:**
+```javascript
+COLORS = {
+  violett: 0xa41b85,
+  blau:    0x006bb3,
+  gruen:   0x00a652,
+  orange:  0xe67814
+}
+```
+
+**Quadrat-Größe:**
+- `colorSqSize = 0.15625 × (42/45)` = 0.14583 Einheiten (42px)
+
+**Position:**
+- Y: `colorY = frameHeight + frameThickness/2 + 0.001` = 0.4798
+- Dicke: 0.002
+
+**Spalten X-Zentren (für A-H):**
+```javascript
+colX(letter) = -0.625 + cellSize/2 + idx × cellSize
+// A=0: -0.54688
+// B=1: -0.39063
+// C=2: -0.23438
+// D=3: -0.07813
+// E=4: +0.07813
+// F=5: +0.23438
+// G=6: +0.39063
+// H=7: +0.54688
+```
+
+**Zeilen Z-Zentren (für Zeile 3-10):**
+```javascript
+rowZ(row) = wallInnerNorth + (row - 4) × cellSize + cellSize/2
+// Zeile 3: -0.43750
+// Zeile 4: -0.28125
+// Zeile 5: -0.12500
+// Zeile 6: +0.03125
+// Zeile 7: +0.18750
+// Zeile 8: +0.34375
+// Zeile 9: +0.50000
+// Zeile 10: +0.65800
+```
+
+**Farbquadrat-Verteilung:**
+
+*Nord-Rahmen (Zeile 3):*
+- C: Grün, D: Orange, E: Orange, F: Blau
+- Z-Position: `-0.437500` (wallInnerNorth - frameWidth/2)
+
+*Süd-Rahmen (Zeile 10):*
+- C: Grün, D: Violett, E: Violett, F: Blau
+- Z-Position: `0.658000` (wallInnerSouth + frameWidth/2)
+
+*West-Rahmen (Spalte A):*
+- Zeile 5: Violett, 6: Blau, 7: Blau, 8: Orange
+- X-Position: `-0.546875` (wallInnerWest - frameWidth/2)
+
+*Ost-Rahmen (Spalte H):*
+- Zeile 5: Violett, 6: Grün, 7: Grün, 8: Orange
+- X-Position: `0.546875` (wallInnerEast + frameWidth/2)
+
+---
+
+## Würfel-Textur & Slot-System
+
+**Würfel-Textur:**
+- Format: WebP Base64-embedded
+- Variable: `cubeTexImg.src`
+- Verwendet in: 3×3 Grid-Textur für Würfelflächen
+
+**Slot-Zuordnung (deck → face):**
+```javascript
+// deck[0-3]  → f0 (Face 0)
+// deck[4-7]  → f1 (Face 1)
+// deck[8-11] → f2 (Face 2)
+
+// Face 0: Zellen 7=S1, 4=S2, 2=S3, 3=S4
+// Face 1: Zellen 10=S1, 11=S2, 15=S3, 18=S4
+// Face 2: Zellen 27=S1, 26=S2, 22=S3, 19=S4
+```
+
+**Canvas-Textur (3×3 Grid):**
+```javascript
+function createFaceTexture(slotMap, imgRotation) {
+  canvas: 256×256
+  cell: 256/3 = 85.33px
+  
+  // Würfel-Textur als Hintergrund (optional rotiert)
+  // Slot-Zellen beschriftet mit Farbe #2a1810
+  // Font: bold 56px Arial
+}
+```
+
+**Slot-Map Struktur:**
+```javascript
+slotMap = { 
+  "row,col": { 
+    val: number,     // Würfelwert 1-4
+    rot: rotation    // Rotation in Radiant
+  } 
+}
+```
+
+---
+
 ## Kamera-Einstellungen
 
 **Augenhöhe (Spieler):**
@@ -339,157 +572,7 @@ Einheiten = (mm / 23.33) × 0.15625
 ---
 
 *Erstellt: 2026-01-31*  
+*Aktualisiert: 2026-02-02*  
 *Projekt: DigiKipp 3D Memory Game*  
 *Entwickler: Peter Lenhart*  
-*Version: Exakt auf funktionierende Original-Datei angepasst*
-
----
-
-## Benanntes Raster (Spalten & Zeilen)
-
-**Spalten:** A bis H (8 Spalten, links nach rechts = West nach Ost)
-
-**Zeilen:** beginnen oben mit 1, nach unten fortlaufend
-
-**Rahmen:**
-- Oberer Rand: Zeile 3
-- Unterer Rand: Zeile 10
-- Linker Rand: Spalte A
-- Rechter Rand: Spalte H
-
-**Spielbereich (innerhalb des Rahmens):** Spalten B–G, Zeilen 4–9
-
-```
-     A    B    C    D    E    F    G    H
-  1  .    .    .    .    .    .    .    .
-  2  .    .    .    .    .    .    .    .
-  3  [========== RAHMEN OBEN ===========]
-  4  ‖  B4   C4   D4   E4   F4   G4   ‖
-  5  ‖  B5   C5   D5   E5   F5   G5   ‖
-  6  ‖  B6   C6   D6   E6   F6   G6   ‖
-  7  ‖  B7   C7   D7   E7   F7   G7   ‖
-  8  ‖  B8   C8   D8   E8   F8   G8   ‖
-  9  ‖  B9   C9   D9   E9   F9   G9   ‖
- 10  [========= RAHMEN UNTEN ===========]
-```
-
----
-
-## Rahmen & Farbquadrate
-
-**Rahmen:** Schwarze BoxGeometry, 1 Zelle breit, auf Y = frameHeight (0.46875)
-
-**Farbquadrate:** 42×42px auf dem Rahmen, Maßstab: `cellSize × 42/45`
-
-**Spielfarben (RGB):**
-| Farbe | RGB | Hex |
-|-------|-----|-----|
-| Violett | rgb(164, 27, 133) | 0xa41b85 |
-| Blau | rgb(0, 107, 179) | 0x006bb3 |
-| Grün | rgb(0, 166, 82) | 0x00a652 |
-| Orange | rgb(249, 150, 30) | 0xe67814 |
-
-**Platzierung der Farbquadrate:**
-
-| Position | Farbe |
-|----------|-------|
-| C3 (Nord) | Grün |
-| D3 (Nord) | Orange |
-| E3 (Nord) | Orange |
-| F3 (Nord) | Blau |
-| C10 (Süd) | Grün |
-| D10 (Süd) | Violett |
-| E10 (Süd) | Violett |
-| F10 (Süd) | Blau |
-| A5 (West) | Violett |
-| A6 (West) | Blau |
-| A7 (West) | Blau |
-| A8 (West) | Orange |
-| H5 (Ost) | Violett |
-| H6 (Ost) | Grün |
-| H7 (Ost) | Grün |
-| H8 (Ost) | Orange |
-
----
-
-## Würfel-Faces & Slots
-
-**Physikalische Tatsache:** Beim zyklischen CW-Kippen kommen immer dieselben 3 Faces an die Oberfläche:
-
-```
-Face oben:   f2 → f0 → f1 → f2 → f0 → f1 → ...
-Quadrant:    Q3 → Q0 → Q1 → Q2 → Q3 → Q0 → ...
-```
-
-**Face-Zuordnung in Three.js Material-Array:**
-- f0 = +Z (Südwand in Ausgangslage)
-- f1 = −X (Westwand in Ausgangslage)
-- f2 = +Y (oben in Ausgangslage = Startlage)
-
-**Slots:** 4 Slots (S1–S4) auf jeder der 3 relevanten Faces. Jeder Slot taucht auf allen 3 Faces auf — beim Kippen wird immer eine andere Zelle mit derselben Slot-ID sichtbar.
-
-**Slot-Zuordnung:**
-
-| Slot | f0 (Zelle) | f1 (Zelle) | f2 (Zelle) |
-|------|-----------|-----------|-----------|
-| S1 | 7 | 10 | 27 |
-| S2 | 4 | 11 | 26 |
-| S3 | 2 | 15 | 22 |
-| S4 | 3 | 18 | 19 |
-
-**Randomdeck:** 12 Zahlen (1–12), keine Wiederholung, bei jedem Neueinstieg neu gemischt.
-- deck[0–3] → f0 Slots S1–S4
-- deck[4–7] → f1 Slots S1–S4
-- deck[8–11] → f2 Slots S1–S4
-
----
-
-## Würfel-Textrotationen
-
-**Regel:** Zahlenfüße zeigen immer zum Rahmen (nach Süden/zum Spieler).
-
-**Per-Slot Rotationen auf Canvas** (im lokalen Koordinatensystem der jeweiligen Face):
-
-| Face | Slots | Rotation | Ergebnis |
-|------|-------|----------|----------|
-| f2 (+Y) | S1, S2 | 0 | von Süden lesbar |
-| f2 (+Y) | S3, S4 | +π/2 | von Osten lesbar |
-| f0 (+Z) | S1, S2 | +π/2 | von Osten lesbar |
-| f0 (+Z) | S3, S4 | π | Kopf auf Canvas (wird beim Aufkippen korrekt) |
-| f1 (−X) | S1, S2 | π | Kopf auf Canvas (wird beim Aufkippen korrekt) |
-| f1 (−X) | S3, S4 | −π/2 | von Westen lesbar |
-
-**Punkt bei 6 und 9:** Satzpunkt-Stil, auf gleicher Baseline wie die Zahl, rechts daneben. Position relativ zum Text: `(xOff + 22, 18)`, Radius 4px.
-
-**Zweistellige Zahlen (10, 11, 12):** Um 4px nach links verschoben für optische Zentrierung.
-
----
-
-## Kamera (aktuell, nach Zoom & Süd-Verschiebung)
-
-```javascript
-const radius = 1.25;
-const southShift = -0.143;
-camera.position.set(0, baseY + radius * Math.sin(-verticalAngle),
-                    radius * Math.cos(verticalAngle) + 0.3 + southShift);
-camera.lookAt(0, 0.46875, 0.7 + southShift);
-```
-
-Keine interaktiven Controls (kein Pinch/Pan) — statische Kamera.
-
----
-
-## Touch-System (Live-Drag + Schwerkraft)
-
-1. **touchstart:** Richtung noch nicht bestimmt
-2. **touchmove:** Ab 8px Bewegung → Richtung bestimmen, Pivot-Gruppe erstellen, Live-Rotation (DRAG_SENSITIVITY = 150px für 90°)
-3. **touchend:** Tipping-Point bei 45° (π/4) — darüber: Schwerkraft-Fall zur nächsten Face; darunter: zurück zur aktuellen. Fall-Animation: Ease-in (t²), Dauer 150–420ms.
-
-**performKipp()** bleibt für automatische Sequenzen (Buttons 1–6).
-
----
-
-*Erstellt: 2026-01-31*
-*Aktualisiert: 2026-01-31 — Spalten/Zeilen, Rahmen, Farbquadrate, Slots, Textrotationen, Kamera, Touch*
-*Projekt: DigiKipp 3D Memory Game*
-*Entwickler: Peter Lenhart*
+*Version: Erweitert mit Holz-Textur, Kärtchen-System, Rahmen-Details, Farbquadraten und Slot-System*
