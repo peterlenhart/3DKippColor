@@ -1406,8 +1406,10 @@
       function wippOst() {
         return new Promise(resolve => {
           // Hand für Ost-Kipp neu positionieren (3 Zellen nördlicher, 2.77 Zellen westlicher)
-          handDemo.position.z = handStart.z - 0.46875;
-          handDemo.position.x = handStart.x - 0.43375;
+          // WICHTIG: Erst Ziel-Position berechnen, dann Hand bewegen
+          const handQ2PosZ = handStart.z - 0.46875;
+          const handQ2PosX = handStart.x - 0.43375;
+          handDemo.position.set(handQ2PosX, handDemo.position.y, handQ2PosZ);
           const handStartQ2 = handDemo.position.clone();
           handDemo.rotation.z = -Math.PI / 2; // 90° cw gedreht
           const startTime = performance.now();
