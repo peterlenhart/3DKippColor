@@ -563,10 +563,10 @@
       spieltisch.rotation.x = -Math.PI / 2;
       
       // Position: obere linke Ecke auf A1
-      // A1 ist bei x=-0.625 (linke Kante), z=-0.515625 (obere Kante äußerer Rahmen)
+      // A1 ist bei x=-0.625 (linke Kante), z=-0.515625 - 2*0.15625 (2 Zellen nördlicher)
       // Plane-Zentrum positionieren
       const xCenter = -0.625 + width / 2;
-      const zCenter = -0.515625 + height / 2;
+      const zCenter = -0.828125 + height / 2; // 2 Zellen nördlicher
       const yPos = 0.001 + 3 * 0.15625; // 3 Zellen über π1 = 0.46975
       
       spieltisch.position.set(xCenter, yPos, zCenter);
