@@ -47,7 +47,7 @@
 
     #hintText {
       position: absolute;
-      top: 420px;
+      top: 480px;
       left: 50%;
       transform: translateX(-50%);
       text-align: center;
@@ -602,38 +602,46 @@
     // =========================
     // SPIELTISCH TEXTUR (ersetzt codierten Rahmen)
     // =========================
-    const spieltischTexture = new THREE.TextureLoader().load('spieltisch.webp', (texture) => {
-      // Breite: 8 Zellen = 1.25
-      const width = 8 * 0.15625; // 1.25
-      // Höhe proportional zur Bildgröße
+    // Spieltisch SOFORT erstellen (ohne auf Textur-Load zu warten)
+    const SPIELTISCH_WIDTH = 8 * 0.15625; // 1.25
+    const SPIELTISCH_X = -0.625 + SPIELTISCH_WIDTH / 2; // = 0.0
+    const SPIELTISCH_Y = 0.001 + 3 * 0.15625; // = 0.46975
+    
+    const spieltischGeometry = new THREE.PlaneGeometry(SPIELTISCH_WIDTH, SPIELTISCH_WIDTH * 0.5625); // Aspect ratio später anpassen
+    const spieltischMaterial = new THREE.MeshStandardMaterial({ 
+      color: 0x3a2f1f, // Platzhalter-Farbe
+      transparent: true,
+      roughness: 0.8,
+      metalness: 0.2
+    });
+    const spieltisch = new THREE.Mesh(spieltischGeometry, spieltischMaterial);
+    
+    // Position JETZT setzen und einfrieren
+    spieltisch.rotation.x = -Math.PI / 2;
+    spieltisch.position.set(SPIELTISCH_X, SPIELTISCH_Y, -0.828125 + (SPIELTISCH_WIDTH * 0.5625) / 2);
+    spieltisch.matrixAutoUpdate = false;
+    spieltisch.updateMatrix();
+    spieltisch.receiveShadow = true;
+    scene.add(spieltisch);
+    
+    // Textur asynchron laden und NUR Material updaten (Position bleibt!)
+    new THREE.TextureLoader().load('spieltisch.webp', (texture) => {
       const imgAspect = texture.image.height / texture.image.width;
-      const height = width * imgAspect;
+      const height = SPIELTISCH_WIDTH * imgAspect;
       
-      const spieltischGeometry = new THREE.PlaneGeometry(width, height);
-      const spieltischMaterial = new THREE.MeshStandardMaterial({ 
-        map: texture,
-        transparent: true,
-        roughness: 0.8,
-        metalness: 0.2
-      });
-      const spieltisch = new THREE.Mesh(spieltischGeometry, spieltischMaterial);
+      // Geometrie mit korrekter Höhe
+      spieltisch.geometry.dispose();
+      spieltisch.geometry = new THREE.PlaneGeometry(SPIELTISCH_WIDTH, height);
       
-      // Rotation: horizontal (wie Boden)
-      spieltisch.rotation.x = -Math.PI / 2;
-      
-      // Position: STATISCH UND UNVERÄNDERLICH
-      // A1 ist bei x=-0.625 (linke Kante), z=-0.515625 - 2*0.15625 (2 Zellen nördlicher)
-      // Plane-Zentrum positionieren
-      const SPIELTISCH_X = -0.625 + (8 * 0.15625) / 2; // = 0.0
-      const SPIELTISCH_Y = 0.001 + 3 * 0.15625; // = 0.46975
+      // Z-Position korrigieren
       const SPIELTISCH_Z = -0.828125 + height / 2;
-      
-      spieltisch.position.set(SPIELTISCH_X, SPIELTISCH_Y, SPIELTISCH_Z);
-      // Position einfrieren - darf sich NIEMALS ändern
-      spieltisch.matrixAutoUpdate = false;
+      spieltisch.position.z = SPIELTISCH_Z;
       spieltisch.updateMatrix();
-      spieltisch.receiveShadow = true;
-      scene.add(spieltisch);
+      
+      // Material mit Textur
+      spieltischMaterial.map = texture;
+      spieltischMaterial.color.setHex(0xffffff);
+      spieltischMaterial.needsUpdate = true;
     });
 
     // =========================
