@@ -891,13 +891,13 @@
         card.ctx.clearRect(0, 0, 85, 170);
         card.ctx.drawImage(img, 0, 0, 85, 170);
         
-        // Zahl 22px unter Oberkante
+        // Zahl 32px unter Oberkante
         const displayText = randZahl + ((randZahl === 6 || randZahl === 9) ? '.' : '');
         card.ctx.fillStyle = '#2a1810';
         card.ctx.font = 'bold 56px Arial';
         card.ctx.textAlign = 'center';
         card.ctx.textBaseline = 'middle';
-        card.ctx.fillText(displayText, 42, 22);
+        card.ctx.fillText(displayText, 42, 32);
         
         card.texture.needsUpdate = true;
         card.mesh.material.map = card.texture;
@@ -915,7 +915,7 @@
           card.ctx.font = 'bold 56px Arial';
           card.ctx.textAlign = 'center';
           card.ctx.textBaseline = 'middle';
-          card.ctx.fillText(displayText, 42, 22);
+          card.ctx.fillText(displayText, 42, 32);
           
           card.texture.needsUpdate = true;
           card.mesh.material.map = card.texture;
