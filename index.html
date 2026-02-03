@@ -508,7 +508,8 @@
     
     const wallGeometry = new THREE.BoxGeometry(0.9375, 0.46875, 0.0335);
     const wallMaterial = new THREE.MeshBasicMaterial({ 
-      map: wallTexture
+      map: wallTexture,
+      color: 0x666666  // Dunkler (40% Helligkeit)
     });
     
     const wall = new THREE.Mesh(wallGeometry, wallMaterial);
