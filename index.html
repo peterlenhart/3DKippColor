@@ -405,7 +405,7 @@
     const cardY = 0.001 + 3 * 0.15625 + 0.002; // auf Spieltisch (3 Zellen über π1)
     const cardZ = 0.109375 + 4 * 0.15625 + 0.15625 + 15 * (2.5 / 720); // 4 Zeilen südlich, + 15px
 
-    const totalCardsWidth = 8 * cardWidth; // 8 Zellen
+    const totalCardsWidth = 6 * cardWidth + 5 * cardGap; // Tatsächliche Breite aller Kärtchen + Gaps
     const cardStartX = -totalCardsWidth / 2 + cardWidth / 2;
 
     const gameCards = [];
@@ -893,13 +893,13 @@
         card.ctx.clearRect(0, 0, 85, 170);
         card.ctx.drawImage(img, 0, 0, 85, 170);
         
-        // Zahl 45px südlicher (von 128 auf 173)
+        // Zahl 67px nördlicher
         const displayText = randZahl + ((randZahl === 6 || randZahl === 9) ? '.' : '');
         card.ctx.fillStyle = '#2a1810';
         card.ctx.font = 'bold 56px Arial';
         card.ctx.textAlign = 'center';
         card.ctx.textBaseline = 'middle';
-        card.ctx.fillText(displayText, 42, 173);
+        card.ctx.fillText(displayText, 42, 106);
         
         card.texture.needsUpdate = true;
         card.mesh.material.map = card.texture;
@@ -917,7 +917,7 @@
           card.ctx.font = 'bold 56px Arial';
           card.ctx.textAlign = 'center';
           card.ctx.textBaseline = 'middle';
-          card.ctx.fillText(displayText, 42, 173);
+          card.ctx.fillText(displayText, 42, 106);
           
           card.texture.needsUpdate = true;
           card.mesh.material.map = card.texture;
