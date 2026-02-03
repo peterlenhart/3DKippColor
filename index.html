@@ -1689,6 +1689,7 @@
         hintText.style.display = 'none'; // Hinweistext ausblenden
         countdown.style.display = 'block'; // Countdown einblenden
         // Hand wird automatisch in demoLoop() ausgeblendet
+        return; // WICHTIG: Erst beim NÄCHSTEN Touch darf gekippt werden
       }
       
       if (gamePhase === 'pause' && pausePivotGroup) {
@@ -1914,6 +1915,7 @@
         gamePhase = 'kippen';
         hintText.style.display = 'none'; // Hinweistext ausblenden
         countdown.style.display = 'block'; // Countdown einblenden
+        return; // WICHTIG: Erst beim NÄCHSTEN Click darf gekippt werden
       }
     });
     
