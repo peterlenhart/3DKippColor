@@ -362,10 +362,15 @@
     const boxbodenTexture = new THREE.TextureLoader().load('Boxboden.webp');
     const boxbodenSize = 6 * 0.15625; // 0.9375
     const boxbodenGeometry = new THREE.PlaneGeometry(boxbodenSize, boxbodenSize);
-    const boxbodenMaterial = new THREE.MeshBasicMaterial({ map: boxbodenTexture });
+    const boxbodenMaterial = new THREE.MeshStandardMaterial({ 
+      map: boxbodenTexture,
+      roughness: 0.8,
+      metalness: 0.2
+    });
     const boxboden = new THREE.Mesh(boxbodenGeometry, boxbodenMaterial);
     boxboden.rotation.x = -Math.PI / 2;
     boxboden.position.set(0, 0.001, 0.109375);
+    boxboden.receiveShadow = true;
     scene.add(boxboden);
     
     const gridSize = 16 * 0.15625;
