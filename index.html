@@ -375,6 +375,26 @@
     table.receiveShadow = true;
     scene.add(table);
 
+
+    // =========================
+    // BOX-BODEN SPRITE auf π1
+    // =========================
+    const textureLoader = new THREE.TextureLoader();
+    const boxBodenTexture = textureLoader.load('boxboden.webp');
+    
+    // Box-Boden: 6×6 Zellen = 0.9375 × 0.9375 Einheiten
+    const boxBodenGeometry = new THREE.PlaneGeometry(0.9375, 0.9375);
+    const boxBodenMaterial = new THREE.MeshStandardMaterial({
+      map: boxBodenTexture,
+      roughness: 0.7,
+      metalness: 0.2
+    });
+    const boxBoden = new THREE.Mesh(boxBodenGeometry, boxBodenMaterial);
+    boxBoden.rotation.x = -Math.PI / 2;  // horizontal auf π1
+    boxBoden.position.set(0, 0.001, 0.1105);  // zentriert am orangen Achsmittelpunkt
+    boxBoden.receiveShadow = true;
+    scene.add(boxBoden);
+
     // =========================
     // 3D GRID auf π1
     // =========================
