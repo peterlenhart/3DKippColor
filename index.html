@@ -378,6 +378,19 @@
     // =========================
     // 3D GRID auf π1
     // =========================
+    // Boxboden-Textur (6x6 Zellen, zentriert um Achsenmittelpunkt)
+    const boxbodenTexture = new THREE.TextureLoader().load('boxboden.webp');
+    const boxbodenSize = 6 * 0.15625; // 6 Zellen = 0.9375
+    const boxbodenGeometry = new THREE.PlaneGeometry(boxbodenSize, boxbodenSize);
+    const boxbodenMaterial = new THREE.MeshBasicMaterial({ 
+      map: boxbodenTexture,
+      transparent: true
+    });
+    const boxboden = new THREE.Mesh(boxbodenGeometry, boxbodenMaterial);
+    boxboden.rotation.x = -Math.PI / 2;
+    boxboden.position.set(0, 0.001, 0.109375); // π1, zentriert um Achsenmittelpunkt
+    scene.add(boxboden);
+    
     const gridSize = 16 * 0.15625;
     const gridDivisions = 16;
     
