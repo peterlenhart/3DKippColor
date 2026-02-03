@@ -542,180 +542,37 @@
     scene.add(wallRight);
 
     // =========================
-    // SCHWARZER RAHMEN (3 Zellen über π1)
+    // SPIELTISCH TEXTUR (ersetzt codierten Rahmen)
     // =========================
-    // WICHTIG: Wände sind nach Süden verschoben um 0.1105!
-    // Innenmaß: 6×6 Zellen (0.9375 × 0.9375)
-    // Rahmenbreite: 1 Zelle rundum (0.15625)
-    // Z-Mittelpunkt: 0.1105 (wie Seitenwände)
-    
-    const frameHeight = 0.46875; // 3 Zellen über π1
-    const frameThickness = 0.02; // Minimale Dicke in Y
-    const frameWidth = 0.15625; // 1 Zelle breit
-    
-    // Tatsächliche Wand-Innenkanten:
-    const wallInnerNorth = -0.359375;
-    const wallInnerSouth = 0.579875;
-    const wallInnerWest = -0.46875;
-    const wallInnerEast = 0.46875;
-    const wallCenterZ = 0.1105; // Z-Verschiebung des Spielbereichs
-    
-    const frameMaterial = new THREE.MeshStandardMaterial({
-      color: 0x000000,
-      roughness: 0.9,
-      metalness: 0.1
+    const spieltischTexture = new THREE.TextureLoader().load('spieltisch.webp', (texture) => {
+      // Breite: 8 Zellen = 1.25
+      const width = 8 * 0.15625; // 1.25
+      // Höhe proportional zur Bildgröße
+      const imgAspect = texture.image.height / texture.image.width;
+      const height = width * imgAspect;
+      
+      const spieltischGeometry = new THREE.PlaneGeometry(width, height);
+      const spieltischMaterial = new THREE.MeshStandardMaterial({ 
+        map: texture,
+        roughness: 0.8,
+        metalness: 0.2
+      });
+      const spieltisch = new THREE.Mesh(spieltischGeometry, spieltischMaterial);
+      
+      // Rotation: horizontal (wie Boden)
+      spieltisch.rotation.x = -Math.PI / 2;
+      
+      // Position: obere linke Ecke auf A1
+      // A1 ist bei x=-0.625 (linke Kante), z=-0.515625 (obere Kante äußerer Rahmen)
+      // Plane-Zentrum positionieren
+      const xCenter = -0.625 + width / 2;
+      const zCenter = -0.515625 + height / 2;
+      const yPos = 0.001 + 3 * 0.15625; // 3 Zellen über π1 = 0.46975
+      
+      spieltisch.position.set(xCenter, yPos, zCenter);
+      spieltisch.receiveShadow = true;
+      scene.add(spieltisch);
     });
-    
-    // Nord-Balken (an Nord-Innenkante)
-    const northFrame = new THREE.Mesh(
-      new THREE.BoxGeometry(1.25, frameThickness, frameWidth), // 8 Zellen breit
-      frameMaterial
-    );
-    northFrame.position.set(0, frameHeight, wallInnerNorth - frameWidth/2);
-    northFrame.castShadow = true;
-    northFrame.receiveShadow = true;
-    scene.add(northFrame);
-    
-    // Süd-Balken (an Süd-Innenkante)
-    const southFrame = new THREE.Mesh(
-      new THREE.BoxGeometry(1.25, frameThickness, frameWidth), // 8 Zellen breit
-      frameMaterial
-    );
-    southFrame.position.set(0, frameHeight, wallInnerSouth + frameWidth/2);
-    southFrame.castShadow = true;
-    southFrame.receiveShadow = true;
-    scene.add(southFrame);
-    
-    // West-Balken (an West-Innenkante, zentriert auf Z=0.1105)
-    const westFrame = new THREE.Mesh(
-      new THREE.BoxGeometry(frameWidth, frameThickness, 0.9375), // 6 Zellen lang
-      frameMaterial
-    );
-    westFrame.position.set(wallInnerWest - frameWidth/2, frameHeight, wallCenterZ);
-    westFrame.castShadow = true;
-    westFrame.receiveShadow = true;
-    scene.add(westFrame);
-    
-    // Ost-Balken (an Ost-Innenkante, zentriert auf Z=0.1105)
-    const eastFrame = new THREE.Mesh(
-      new THREE.BoxGeometry(frameWidth, frameThickness, 0.9375), // 6 Zellen lang
-      frameMaterial
-    );
-    eastFrame.position.set(wallInnerEast + frameWidth/2, frameHeight, wallCenterZ);
-    eastFrame.castShadow = true;
-    eastFrame.receiveShadow = true;
-    scene.add(eastFrame);
-
-    // =========================
-    // RAHMEN-KANTEN 6px silbergrau inline
-    // =========================
-    const lineW = 4 * (2.5 / 720); // 4px in Three.js
-    const lineThick = 0.002;
-    const lineY = frameHeight + frameThickness / 2 + 0.0005;
-    const lineMat = new THREE.MeshBasicMaterial({ color: 0x606060 });
-
-    // Äußere Kanten des Rahmens
-    const outerN = wallInnerNorth - frameWidth; // -0.515625
-    const outerS = wallInnerSouth + frameWidth; // 0.736125
-    const outerW = wallInnerWest - frameWidth;  // -0.625
-    const outerE = wallInnerEast + frameWidth;  // 0.625
-    const outerMidZ = (outerN + outerS) / 2;
-
-    // Äußere Perimeter: N/S/W/E inline
-    const outerLines = [
-      { geo: new THREE.BoxGeometry(1.25, lineThick, lineW),                pos: [0, lineY, outerN + lineW/2] },  // N außen
-      { geo: new THREE.BoxGeometry(1.25, lineThick, lineW),                pos: [0, lineY, outerS - lineW/2] },  // S außen
-      { geo: new THREE.BoxGeometry(lineW, lineThick, outerS - outerN),     pos: [outerW + lineW/2, lineY, outerMidZ] }, // W außen
-      { geo: new THREE.BoxGeometry(lineW, lineThick, outerS - outerN),     pos: [outerE - lineW/2, lineY, outerMidZ] }  // E außen
-    ];
-    outerLines.forEach(l => {
-      const m = new THREE.Mesh(l.geo, lineMat);
-      m.position.set(...l.pos);
-      scene.add(m);
-    });
-
-    // Innere Kanten (Innenausschnitt)
-    const innerMidZ = (wallInnerNorth + wallInnerSouth) / 2;
-    const innerSpanZ = wallInnerSouth - wallInnerNorth;
-
-    const innerLines = [
-      { geo: new THREE.BoxGeometry(0.9375 + 2 * lineW, lineThick, lineW),  pos: [0, lineY, wallInnerNorth - lineW/2] }, // N innen
-      { geo: new THREE.BoxGeometry(0.9375 + 2 * lineW, lineThick, lineW),  pos: [0, lineY, wallInnerSouth + lineW/2] }, // S innen
-      { geo: new THREE.BoxGeometry(lineW, lineThick, innerSpanZ),         pos: [wallInnerWest - lineW/2, lineY, innerMidZ] }, // W innen
-      { geo: new THREE.BoxGeometry(lineW, lineThick, innerSpanZ),         pos: [wallInnerEast + lineW/2, lineY, innerMidZ] }  // E innen
-    ];
-    innerLines.forEach(l => {
-      const m = new THREE.Mesh(l.geo, lineMat);
-      m.position.set(...l.pos);
-      scene.add(m);
-    });
-
-    // =========================
-    // FARBQUADRATE AUF RAHMEN
-    // =========================
-    const colorY = frameHeight + frameThickness / 2 + 0.001; // Direkt auf Rahmen-Oberfläche
-    const cellSize = 0.15625; // 1 Zelle
-    const colorThick = 0.002;
-
-    // Spalten X-Zentren (A=1..H=8), Frame links bei -0.625
-    function colX(letter) {
-      const idx = letter.charCodeAt(0) - 'A'.charCodeAt(0); // A=0..H=7
-      return -0.625 + cellSize / 2 + idx * cellSize;
-    }
-
-    // Zeilen Z-Zentren: Zeile 4 beginnt bei wallInnerNorth
-    function rowZ(row) {
-      return wallInnerNorth + (row - 4) * cellSize + cellSize / 2;
-    }
-
-    const COLORS = {
-      violett: 0xa41b85,
-      blau:    0x006bb3,
-      gruen:   0x00a652,
-      orange:  0xe67814
-    };
-
-    const colorSqSize = cellSize * 42 / 45; // 42px in Three.js-Einheiten
-
-    const colorSquareMeshes = {};
-
-    function addColorSquare(x, z, color, key) {
-      const geo = new THREE.BoxGeometry(colorSqSize, colorThick, colorSqSize);
-      const mat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.8, metalness: 0.1 });
-      const mesh = new THREE.Mesh(geo, mat);
-      mesh.position.set(x, colorY, z);
-      scene.add(mesh);
-      if (key) colorSquareMeshes[key] = mesh;
-    }
-
-    // Nord-Rahmen (Zeile 3)
-    const nordZ = wallInnerNorth - frameWidth / 2;
-    addColorSquare(colX('C'), nordZ, COLORS.gruen, 'Nord_C');
-    addColorSquare(colX('D'), nordZ, COLORS.orange, 'Nord_D');
-    addColorSquare(colX('E'), nordZ, COLORS.orange, 'Nord_E');
-    addColorSquare(colX('F'), nordZ, COLORS.blau, 'Nord_F');
-
-    // Süd-Rahmen (Zeile 10)
-    const südZ = wallInnerSouth + frameWidth / 2;
-    addColorSquare(colX('C'), südZ, COLORS.gruen, 'Süd_C');
-    addColorSquare(colX('D'), südZ, COLORS.violett, 'Süd_D');
-    addColorSquare(colX('E'), südZ, COLORS.violett, 'Süd_E');
-    addColorSquare(colX('F'), südZ, COLORS.blau, 'Süd_F');
-
-    // West-Rahmen (Spalte A): 5↔8 getauscht
-    const westX = wallInnerWest - frameWidth / 2;
-    addColorSquare(westX, rowZ(5), COLORS.violett, 'West_5');
-    addColorSquare(westX, rowZ(6), COLORS.blau, 'West_6');
-    addColorSquare(westX, rowZ(7), COLORS.blau, 'West_7');
-    addColorSquare(westX, rowZ(8), COLORS.orange, 'West_8');
-
-    // Ost-Rahmen (Spalte H)
-    const ostX = wallInnerEast + frameWidth / 2;
-    addColorSquare(ostX, rowZ(5), COLORS.violett, 'Ost_5');
-    addColorSquare(ostX, rowZ(6), COLORS.gruen, 'Ost_6');
-    addColorSquare(ostX, rowZ(7), COLORS.gruen, 'Ost_7');
-    addColorSquare(ostX, rowZ(8), COLORS.orange, 'Ost_8');
-
 
     // =========================
     // WÜRFEL mit 3x3 Grid-Textur
