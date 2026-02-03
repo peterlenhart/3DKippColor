@@ -84,7 +84,7 @@
 
     #actionButton {
       position: absolute;
-      top: 560px;
+      top: 540px;
       left: 180px;
       transform: translateX(-50%);
       padding: 8px 28px;
@@ -208,6 +208,7 @@
     }
 
     #backButton {
+      display: none;
       position: absolute;
       top: 10px;
       right: 10px;
@@ -221,7 +222,6 @@
       pointer-events: auto;
       box-shadow: 0 2px 4px rgba(0,0,0,0.4),
                   inset 0 1px 0 rgba(255,255,255,0.8);
-      display: flex;
       align-items: center;
       justify-content: center;
       z-index: 200;
@@ -292,7 +292,7 @@
     // Scene Setup
     // =========================
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x1c1c1e);
+    // scene.background gelöscht - body background (#000000) wird sichtbar
 
     const containerWidth = 360;
     const containerHeight = 720;
@@ -389,6 +389,7 @@
     gridHelper.position.z = 0.421875;
     gridHelper.material.opacity = 0.3;
     gridHelper.material.transparent = true;
+    gridHelper.visible = false;
     scene.add(gridHelper);
     
     const gridHelper2 = new THREE.GridHelper(gridSize, gridDivisions, 0xffffff, 0x888888);
@@ -396,6 +397,7 @@
     gridHelper2.position.z = 0.421875;
     gridHelper2.material.opacity = 0.3;
     gridHelper2.material.transparent = true;
+    gridHelper2.visible = false;
     scene.add(gridHelper2);
 
     // Kärtchen auf dem Spieltisch (π1, orange Raster)
@@ -494,6 +496,7 @@
       new THREE.Vector3(2.5, 0.002, 0.109375)
     ]);
     const xAxis1 = new THREE.Line(xAxisGeometry1, axesMaterialPi1);
+    xAxis1.visible = false;
     scene.add(xAxis1);
 
     const zAxisGeometry1 = new THREE.BufferGeometry().setFromPoints([
@@ -501,6 +504,7 @@
       new THREE.Vector3(0, 0.002, 2.5)
     ]);
     const zAxis1 = new THREE.Line(zAxisGeometry1, axesMaterialPi1);
+    zAxis1.visible = false;
     scene.add(zAxis1);
 
     const xAxisGeometry2 = new THREE.BufferGeometry().setFromPoints([
@@ -508,6 +512,7 @@
       new THREE.Vector3(2.5, 0.46875, 0.109375)
     ]);
     const xAxis2 = new THREE.Line(xAxisGeometry2, axesMaterial);
+    xAxis2.visible = false;
     scene.add(xAxis2);
 
     const zAxisGeometry2 = new THREE.BufferGeometry().setFromPoints([
@@ -515,6 +520,7 @@
       new THREE.Vector3(0, 0.46875, 2.5)
     ]);
     const zAxis2 = new THREE.Line(zAxisGeometry2, axesMaterial);
+    zAxis2.visible = false;
     scene.add(zAxis2);
 
     // =========================
@@ -568,6 +574,7 @@
       const spieltischMaterial = new THREE.MeshStandardMaterial({ 
         map: texture,
         transparent: true,
+        color: 0x999999, // 60% Helligkeit für satteres Schwarz
         roughness: 0.8,
         metalness: 0.2
       });
