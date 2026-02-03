@@ -1325,38 +1325,17 @@
     // =========================
     // DEMO-ANIMATION Phase 1
     // =========================
-    let textSequenceInterval = null;
-    let textSequenceStarted = false;
+    // Text-Sequenz: Text erscheint bei jedem Wobble
+    let textIndex = 0;
+    const texts = ['KIPPE', 'SCHAU', 'UND MERKE'];
     
-    function startTextSequence() {
-      if (textSequenceStarted) return; // Nur einmal starten!
-      textSequenceStarted = true;
-      
-      const texts = ['KIPPE', 'SCHAU', 'UND MERKE'];
-      let currentIndex = 0;
-      
-      function showNextWord() {
-        if (gamePhase !== 'demo') {
-          textSequenceStarted = false;
-          hintText.style.animation = 'none';
-          return;
-        }
-        
-        hintText.textContent = texts[currentIndex];
-        hintText.style.animation = 'none';
-        
-        // Force reflow to restart animation
-        void hintText.offsetWidth;
-        
-        hintText.style.animation = 'textSinglePulse 1.6s linear';
-        console.log('Text changed to:', texts[currentIndex], 'Index:', currentIndex);
-        
-        currentIndex = (currentIndex + 1) % texts.length;
-        
-        setTimeout(showNextWord, 1600);
-      }
-      
-      showNextWord();
+    function showTextAtWobble() {
+      if (gamePhase !== 'demo') return;
+      hintText.textContent = texts[textIndex];
+      hintText.style.animation = 'none';
+      void hintText.offsetWidth;
+      hintText.style.animation = 'textSinglePulse 1.6s linear';
+      textIndex = (textIndex + 1) % texts.length;
     }
     
     function startDemoAnimation() {
@@ -1376,6 +1355,7 @@
       // Wipp Richtung Q0 (Nord, um X-Achse)
       function wippNord() {
         return new Promise(resolve => {
+          showTextAtWobble(); // Text genau beim Wobble-Start
           const startTime = performance.now();
           function animateWippNord(currentTime) {
             const elapsed = currentTime - startTime;
@@ -1408,8 +1388,8 @@
       // Wipp Richtung Q2 (Ost, um Z-Achse)
       function wippOst() {
         return new Promise(resolve => {
+          showTextAtWobble(); // Text genau beim Wobble-Start
           // Hand für Ost-Kipp neu positionieren (3 Zellen nördlicher, 2.77 Zellen westlicher)
-          // WICHTIG: Erst Ziel-Position berechnen, dann Hand bewegen
           const handQ2PosZ = handStart.z - 0.46875;
           const handQ2PosX = handStart.x - 0.43375;
           handDemo.position.set(handQ2PosX, handDemo.position.y, handQ2PosZ);
@@ -1435,7 +1415,8 @@
               // Zurück zur Ausgangslage
               cube.quaternion.copy(cubeStartRot);
               cube.position.copy(cubeStart);
-              handDemo.position.copy(handStartQ2); // Q2-Position beibehalten
+              handDemo.position.copy(handStart); // Zurück zur Original-Position!
+              handDemo.rotation.z = 0; // Rotation zurücksetzen
               setTimeout(resolve, pauseBetween);
             }
           }
@@ -1443,34 +1424,61 @@
         });
       }
       
-      // Demo-Sequenz mit Loop
-      wippNord().then(() => {
-        if (gamePhase !== 'demo') {
-          handDemo.visible = false;
-          return Promise.reject('demo ended');
-        }
-        return wippOst();
-      }).then(() => {
+      // Demo-Loop: Wobbles immer N-O-N, dann Pause, wieder N-O-N...
+      function demoLoop() {
         if (gamePhase !== 'demo') {
           handDemo.visible = false;
           return;
         }
-        // Schleife: Demo wiederholen
-        setTimeout(() => {
-          if (gamePhase === 'demo') {
-            startDemoAnimation();
-          }
-        }, 800);
-      }).catch(() => {
-        // Demo wurde abgebrochen
-      });
+        
+        // Immer N → O → N
+        wippNord()
+          .then(() => {
+            if (gamePhase !== 'demo') {
+              handDemo.visible = false;
+              return Promise.reject('demo ended');
+            }
+            return wippOst();
+          })
+          .then(() => {
+            if (gamePhase !== 'demo') {
+              handDemo.visible = false;
+              return Promise.reject('demo ended');
+            }
+            // Pause zwischen "SCHAU" und "UND MERKE": +0,6 Sek
+            return new Promise(resolve => setTimeout(resolve, 600));
+          })
+          .then(() => {
+            if (gamePhase !== 'demo') {
+              handDemo.visible = false;
+              return Promise.reject('demo ended');
+            }
+            return wippNord();
+          })
+          .then(() => {
+            if (gamePhase !== 'demo') {
+              handDemo.visible = false;
+              return;
+            }
+            // 3 Wobbles/Texte durch → Pause 3s, dann nächster Zyklus
+            setTimeout(() => {
+              if (gamePhase === 'demo') {
+                demoLoop(); // Immer gleich: N-O-N
+              }
+            }, 3000);
+          })
+          .catch(() => {
+            // Demo wurde abgebrochen
+          });
+      }
+      
+      demoLoop();
     }
     
     // Demo starten nach kurzer Verzögerung
     setTimeout(() => {
       if (gamePhase === 'demo') {
-        startTextSequence(); // Text-Sequenz nur beim allerersten Start
-        startDemoAnimation();
+        startDemoAnimation(); // Texte erscheinen automatisch bei Wobbles
       }
     }, 1000);
     
