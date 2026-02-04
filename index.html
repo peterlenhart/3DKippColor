@@ -153,20 +153,20 @@
     @keyframes textSinglePulse {
       0% { 
         opacity: 0;
-        transform: translateX(-50%) scale(0.75) translateZ(0);
+        transform: translateX(-50%) scale(0.95) translateZ(0);
         text-shadow: 0 2px 4px rgba(0,0,0,0.8),
                      0 0 5px rgba(212,180,140,0.2);
       }
       65% { 
         opacity: 1;
-        transform: translateX(-50%) scale(1.3) translateZ(0);
+        transform: translateX(-50%) scale(1.05) translateZ(0);
         text-shadow: 0 2px 4px rgba(0,0,0,0.8),
                      0 0 20px rgba(212,180,140,0.9),
                      0 0 40px rgba(212,180,140,0.5);
       }
       100% {
         opacity: 0;
-        transform: translateX(-50%) scale(1.3) translateZ(0);
+        transform: translateX(-50%) scale(1.05) translateZ(0);
         text-shadow: 0 2px 4px rgba(0,0,0,0.8),
                      0 0 12px rgba(212,180,140,0.3);
       }
@@ -663,8 +663,7 @@
     handDemo.position.set(-0.625 + handWidth/2 + 0.15625, 0.001 + 3 * 0.15625 + 0.15, 0.656250 + 0.15625);
     const handOriginalPos = handDemo.position.clone(); // Ursprungsposition speichern
     handDemo.visible = false;
-    // TEMPORÄR: Hand NICHT zur Scene hinzufügen um zu testen ob sie das Problem verursacht
-    // scene.add(handDemo);
+    scene.add(handDemo);
 
     // =========================
     // WÜRFEL mit 3x3 Grid-Textur
@@ -1398,9 +1397,12 @@
       function wippOst() {
         return new Promise(resolve => {
           showTextAtWobble(); // Text genau beim Wobble-Start
-          
-          // Hand KOMPLETT UNSICHTBAR während Ost-Wobble
-          handDemo.visible = false;
+          // Hand für Ost-Kipp neu positionieren (3 Zellen nördlicher, 2.77 Zellen westlicher)
+          const handQ2PosZ = handStart.z - 0.46875;
+          const handQ2PosX = handStart.x - 0.43375;
+          handDemo.position.set(handQ2PosX, handDemo.position.y, handQ2PosZ);
+          const handStartQ2 = handDemo.position.clone();
+          handDemo.rotation.z = -Math.PI / 2; // 90° cw gedreht
           
           const startTime = performance.now();
           function animateWippOst(currentTime) {
@@ -1411,6 +1413,10 @@
             // Würfel wippen
             cube.quaternion.copy(cubeStartRot);
             cube.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), -angle));
+            
+            // Hand synchron bewegen (x-Richtung, nach rechts)
+            const handOffset = Math.sin(t * Math.PI) * 0.1;
+            handDemo.position.x = handStartQ2.x + handOffset;
             
             if (t < 1) {
               requestAnimationFrame(animateWippOst);
