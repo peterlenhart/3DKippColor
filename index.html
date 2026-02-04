@@ -332,6 +332,13 @@
     // =========================
     const scene = new THREE.Scene();
     // scene.background gelöscht - body background (#000000) wird sichtbar
+    
+    // SEPARATE Group für statische Objekte die sich NIE bewegen dürfen
+    const staticGroup = new THREE.Group();
+    staticGroup.matrixAutoUpdate = false;
+    staticGroup.position.set(0, 0, 0);
+    staticGroup.updateMatrix();
+    scene.add(staticGroup);
 
     const containerWidth = 360;
     const containerHeight = 720;
@@ -418,7 +425,9 @@
     boxboden.rotation.x = -Math.PI / 2;
     boxboden.position.set(0, 0.001, 0.109375);
     boxboden.receiveShadow = true;
-    scene.add(boxboden);
+    boxboden.matrixAutoUpdate = false;
+    boxboden.updateMatrix();
+    staticGroup.add(boxboden); // Auch in staticGroup!
     
     const gridSize = 16 * 0.15625;
     const gridDivisions = 16;
@@ -602,11 +611,11 @@
     // =========================
     // SPIELTISCH TEXTUR (ersetzt codierten Rahmen)
     // =========================
-    // Spieltisch: Position wird EINMAL gesetzt und dann eingefroren
+    // Spieltisch in STATISCHER Group - kann sich NICHT bewegen
     let spieltisch = null;
     const SPIEL_WIDTH = 8 * 0.15625;
     
-    const spieltischTexture = new THREE.TextureLoader().load('spieltisch.webp', (texture) => {
+    new THREE.TextureLoader().load('spieltisch.webp', (texture) => {
       const imgAspect = texture.image.height / texture.image.width;
       const height = SPIEL_WIDTH * imgAspect;
       
@@ -622,21 +631,23 @@
       
       spieltisch.rotation.x = -Math.PI / 2;
       
-      // Position EINMALIG setzen
+      // Position ABSOLUT FINAL
       const xCenter = -0.625 + SPIEL_WIDTH / 2;
       const zCenter = -0.828125 + height / 2;
       const yPos = 0.001 + 3 * 0.15625;
       
       spieltisch.position.set(xCenter, yPos, zCenter);
-      spieltisch.receiveShadow = false; // Keine Schatten - könnte Movement verursachen
+      spieltisch.receiveShadow = false;
       spieltisch.castShadow = false;
-      spieltisch.renderOrder = 1; // Render über Boxboden
+      spieltisch.renderOrder = 1;
       
-      // Matrix einfrieren - KEINE automatischen Updates
+      // Matrix einfrieren
       spieltisch.matrixAutoUpdate = false;
       spieltisch.updateMatrix();
       
-      scene.add(spieltisch);
+      // WICHTIG: Zu STATISCHER Group hinzufügen, NICHT direkt zu scene
+      staticGroup.add(spieltisch);
+      console.log('Spieltisch loaded and frozen in staticGroup');
     });
 
     // =========================
