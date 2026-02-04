@@ -602,7 +602,7 @@
     // =========================
     // SPIELTISCH TEXTUR (ersetzt codierten Rahmen)
     // =========================
-    // Spieltisch VOR Scene-Start erstellen und Position FINAL setzen
+    // Spieltisch: Position wird EINMAL gesetzt und dann eingefroren
     let spieltisch = null;
     const SPIEL_WIDTH = 8 * 0.15625;
     
@@ -615,24 +615,26 @@
         map: texture,
         transparent: true,
         roughness: 0.8,
-        metalness: 0.2
+        metalness: 0.2,
+        depthWrite: true
       });
       spieltisch = new THREE.Mesh(spieltischGeometry, spieltischMaterial);
       
       spieltisch.rotation.x = -Math.PI / 2;
       
-      // Position ABSOLUT FINAL - wird NIE mehr geändert
+      // Position EINMALIG setzen
       const xCenter = -0.625 + SPIEL_WIDTH / 2;
       const zCenter = -0.828125 + height / 2;
       const yPos = 0.001 + 3 * 0.15625;
       
       spieltisch.position.set(xCenter, yPos, zCenter);
-      spieltisch.receiveShadow = true;
+      spieltisch.receiveShadow = false; // Keine Schatten - könnte Movement verursachen
+      spieltisch.castShadow = false;
+      spieltisch.renderOrder = 1; // Render über Boxboden
       
-      // Matrix komplett einfrieren - KEINE Updates mehr möglich
+      // Matrix einfrieren - KEINE automatischen Updates
       spieltisch.matrixAutoUpdate = false;
       spieltisch.updateMatrix();
-      Object.freeze(spieltisch.position); // Position einfrieren!
       
       scene.add(spieltisch);
     });
@@ -1706,12 +1708,16 @@
       if (gamePhase === 'demo') {
         gamePhase = 'kippen';
         handDemo.visible = false; // Hand sofort ausblenden
-        hintText.style.display = 'none'; // Hinweistext ausblenden
-        hintText.textContent = 'KIPPEN, SCHAUEN, MERKEN';
-        hintText.style.display = 'block';
-        actionButton.textContent = 'weiter';
-        actionButton.style.display = 'block'; // Button einblenden!
-        countdown.style.display = 'block'; // Countdown einblenden
+        
+        // UI nach kurzer Verzögerung updaten (DOM-Rendering sicherstellen)
+        setTimeout(() => {
+          hintText.textContent = 'KIPPEN, SCHAUEN, MERKEN';
+          hintText.style.display = 'block';
+          actionButton.textContent = 'weiter';
+          actionButton.style.display = 'block';
+          countdown.style.display = 'block';
+        }, 50);
+        
         return; // WICHTIG: Erst beim NÄCHSTEN Touch darf gekippt werden
       }
       
@@ -1937,12 +1943,16 @@
       if (gamePhase === 'demo') {
         gamePhase = 'kippen';
         handDemo.visible = false; // Hand sofort ausblenden
-        hintText.style.display = 'none'; // Hinweistext ausblenden
-        hintText.textContent = 'KIPPEN, SCHAUEN, MERKEN';
-        hintText.style.display = 'block';
-        actionButton.textContent = 'weiter';
-        actionButton.style.display = 'block'; // Button einblenden!
-        countdown.style.display = 'block'; // Countdown einblenden
+        
+        // UI nach kurzer Verzögerung updaten
+        setTimeout(() => {
+          hintText.textContent = 'KIPPEN, SCHAUEN, MERKEN';
+          hintText.style.display = 'block';
+          actionButton.textContent = 'weiter';
+          actionButton.style.display = 'block';
+          countdown.style.display = 'block';
+        }, 50);
+        
         return; // WICHTIG: Erst beim NÄCHSTEN Click darf gekippt werden
       }
     });
