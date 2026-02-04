@@ -1487,7 +1487,7 @@
             // 3 Wobbles/Texte durch → Hand ausblenden für Pause
             handDemo.visible = false;
             
-            // Pause 2s, dann nächster Zyklus (reduziert)
+            // Pause 1,5s, dann nächster Zyklus (reduziert)
             setTimeout(() => {
               if (gamePhase === 'demo') {
                 // Hand zurücksetzen und wieder sichtbar machen
@@ -1496,7 +1496,7 @@
                 handDemo.visible = true;
                 demoLoop(); // Nächster Zyklus
               }
-            }, 2000);
+            }, 1500);
           })
           .catch(() => {
             // Demo wurde abgebrochen
@@ -1759,8 +1759,7 @@
         
         // UI nach kurzer Verzögerung updaten (DOM-Rendering sicherstellen)
         setTimeout(() => {
-          hintText.innerHTML = 'KIPPEN<br>SCHAUEN<br>MERKEN';
-          hintText.style.display = 'block';
+          // Text bleibt wie er ist (kein erneutes Setzen)
           actionButton.textContent = 'weiter';
           actionButton.style.display = 'block';
           countdown.style.display = 'block';
