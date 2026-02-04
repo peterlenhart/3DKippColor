@@ -602,40 +602,38 @@
     // =========================
     // SPIELTISCH TEXTUR (ersetzt codierten Rahmen)
     // =========================
-    // Spieltisch: Position wird EINMAL nach Textur-Load gesetzt und eingefroren
+    // Spieltisch VOR Scene-Start erstellen und Position FINAL setzen
+    let spieltisch = null;
+    const SPIEL_WIDTH = 8 * 0.15625;
+    
     const spieltischTexture = new THREE.TextureLoader().load('spieltisch.webp', (texture) => {
-      // Breite: 8 Zellen = 1.25
-      const width = 8 * 0.15625; // 1.25
-      // Höhe proportional zur Bildgröße
       const imgAspect = texture.image.height / texture.image.width;
-      const height = width * imgAspect;
+      const height = SPIEL_WIDTH * imgAspect;
       
-      const spieltischGeometry = new THREE.PlaneGeometry(width, height);
+      const spieltischGeometry = new THREE.PlaneGeometry(SPIEL_WIDTH, height);
       const spieltischMaterial = new THREE.MeshStandardMaterial({ 
         map: texture,
         transparent: true,
         roughness: 0.8,
         metalness: 0.2
       });
-      const spieltisch = new THREE.Mesh(spieltischGeometry, spieltischMaterial);
+      spieltisch = new THREE.Mesh(spieltischGeometry, spieltischMaterial);
       
-      // Rotation: horizontal (wie Boden)
       spieltisch.rotation.x = -Math.PI / 2;
       
-      // Position: obere linke Ecke auf A1
-      // A1 ist bei x=-0.625 (linke Kante), z=-0.515625 - 2*0.15625 (2 Zellen nördlicher)
-      // Plane-Zentrum positionieren
-      const xCenter = -0.625 + width / 2;
-      const zCenter = -0.828125 + height / 2; // 2 Zellen nördlicher
-      const yPos = 0.001 + 3 * 0.15625; // 3 Zellen über π1 = 0.46975
+      // Position ABSOLUT FINAL - wird NIE mehr geändert
+      const xCenter = -0.625 + SPIEL_WIDTH / 2;
+      const zCenter = -0.828125 + height / 2;
+      const yPos = 0.001 + 3 * 0.15625;
       
       spieltisch.position.set(xCenter, yPos, zCenter);
+      spieltisch.receiveShadow = true;
       
-      // WICHTIG: Position einfrieren - darf sich nicht mehr ändern!
+      // Matrix komplett einfrieren - KEINE Updates mehr möglich
       spieltisch.matrixAutoUpdate = false;
       spieltisch.updateMatrix();
+      Object.freeze(spieltisch.position); // Position einfrieren!
       
-      spieltisch.receiveShadow = true;
       scene.add(spieltisch);
     });
 
@@ -1709,6 +1707,10 @@
         gamePhase = 'kippen';
         handDemo.visible = false; // Hand sofort ausblenden
         hintText.style.display = 'none'; // Hinweistext ausblenden
+        hintText.textContent = 'KIPPEN, SCHAUEN, MERKEN';
+        hintText.style.display = 'block';
+        actionButton.textContent = 'weiter';
+        actionButton.style.display = 'block'; // Button einblenden!
         countdown.style.display = 'block'; // Countdown einblenden
         return; // WICHTIG: Erst beim NÄCHSTEN Touch darf gekippt werden
       }
@@ -1936,6 +1938,10 @@
         gamePhase = 'kippen';
         handDemo.visible = false; // Hand sofort ausblenden
         hintText.style.display = 'none'; // Hinweistext ausblenden
+        hintText.textContent = 'KIPPEN, SCHAUEN, MERKEN';
+        hintText.style.display = 'block';
+        actionButton.textContent = 'weiter';
+        actionButton.style.display = 'block'; // Button einblenden!
         countdown.style.display = 'block'; // Countdown einblenden
         return; // WICHTIG: Erst beim NÄCHSTEN Click darf gekippt werden
       }
