@@ -970,8 +970,8 @@
     }
     
     function drawGoldenBorder(card) {
-      // CMYK: 8, 5, 85, 3 → RGB: #e4eb25
-      card.ctx.strokeStyle = '#e4eb25';
+      // CMYK: 18, 10, 85, 3 → RGB: #cee425
+      card.ctx.strokeStyle = '#cee425';
       card.ctx.lineWidth = 4;
       card.ctx.strokeRect(2, 2, 85 - 4, 170 - 4);
       card.texture.needsUpdate = true;
@@ -1286,6 +1286,19 @@
             if (neueKombi) {
               fillCardWithKombi(activeCardIdx + 1, neueKombi.zahl, neueKombi.color);
             }
+            
+            // Alle Kärtchen rechts vom neuen Ziel mit leernohit befüllen
+            for (let i = activeCardIdx + 2; i < 6; i++) {
+              const c = gameCards[i];
+              if (!c.zahl) { // Nur wenn noch nicht befüllt
+                c.ctx.clearRect(0, 0, 85, 170);
+                c.ctx.drawImage(leerImage, 0, 0, 85, 170);
+                c.texture.needsUpdate = true;
+                c.mesh.material.transparent = true;
+                c.mesh.material.opacity = 0.6;
+                c.mesh.material.needsUpdate = true;
+              }
+            }
           }
           
           // Weiter zur nächsten Runde (onRunde erhöht activeCardIdx)
@@ -1322,11 +1335,29 @@
       card.ctx.drawImage(leerImage, 0, 0, 85, 170);
       card.texture.needsUpdate = true;
       
+      // Auf 60% transparent setzen
+      card.mesh.material.transparent = true;
+      card.mesh.material.opacity = 0.6;
+      card.mesh.material.needsUpdate = true;
+      
       // Rechts daneben (activeCardIdx + 1) neues Ziel generieren
       if (activeCardIdx < 5) {
         const neueKombi = generateNeueKombi();
         if (neueKombi) {
           fillCardWithKombi(activeCardIdx + 1, neueKombi.zahl, neueKombi.color);
+        }
+        
+        // Alle Kärtchen rechts vom neuen Ziel mit leernohit befüllen
+        for (let i = activeCardIdx + 2; i < 6; i++) {
+          const c = gameCards[i];
+          if (!c.zahl) { // Nur wenn noch nicht befüllt
+            c.ctx.clearRect(0, 0, 85, 170);
+            c.ctx.drawImage(leerImage, 0, 0, 85, 170);
+            c.texture.needsUpdate = true;
+            c.mesh.material.transparent = true;
+            c.mesh.material.opacity = 0.6;
+            c.mesh.material.needsUpdate = true;
+          }
         }
       }
       
@@ -2009,9 +2040,24 @@
       pauseLights.forEach(l => l.visible = false);
       gameCards.forEach((c, i) => {
         c.mesh.visible = (i <= activeCardIdx);
-        c.mesh.material.opacity = 1;
-        c.mesh.material.transparent = false;
+        c.mesh.material.opacity = (i === activeCardIdx) ? 1 : c.mesh.material.opacity; // Aktuelles voll sichtbar
+        c.mesh.material.transparent = (i !== activeCardIdx && c.mesh.material.opacity < 1);
       });
+      
+      // Alle leeren Kärtchen rechts vom aktuellen mit leernohit befüllen
+      for (let i = activeCardIdx + 1; i < 6; i++) {
+        const card = gameCards[i];
+        // Prüfen ob Kärtchen leer ist (keine Zahl gesetzt)
+        if (!card.zahl) {
+          card.ctx.clearRect(0, 0, 85, 170);
+          card.ctx.drawImage(leerImage, 0, 0, 85, 170);
+          card.texture.needsUpdate = true;
+          card.mesh.material.transparent = true;
+          card.mesh.material.opacity = 0.6;
+          card.mesh.material.needsUpdate = true;
+        }
+      }
+      
       setButtonsDisabled(false);
     }
 
