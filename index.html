@@ -1059,6 +1059,8 @@
         // Pose vor der Animation speichern
         savedCubePosition = cube.position.clone();
         savedCubeQuaternion = cube.quaternion.clone();
+        savedTopFace = topFace;
+        savedCurrentQuadrant = currentQuadrant;
         animateAufEcke().then(() => {
           startPausePhase();
         });
@@ -1914,6 +1916,8 @@
     let pauseExiting = false;
     let savedCubePosition = null;  // Position vor animateAufEcke
     let savedCubeQuaternion = null; // Quaternion vor animateAufEcke
+    let savedTopFace = null;  // topFace vor animateAufEcke
+    let savedCurrentQuadrant = null; // currentQuadrant vor animateAufEcke
     let pauseAlpha = 0;
     let pauseBeta  = 0;
     let pauseDragActive = false;
@@ -2134,6 +2138,8 @@
       // Gespeicherter Zustand vor der Pause — immer wiederherstellen
       cube.position.copy(savedCubePosition);
       cube.quaternion.copy(savedCubeQuaternion);
+      topFace = savedTopFace;
+      currentQuadrant = savedCurrentQuadrant;
 
       gamePhase = 'spielen';
       document.getElementById('richtungButtons').classList.remove('hidden');
