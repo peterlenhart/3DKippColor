@@ -829,8 +829,6 @@
     // =========================
     // SPIELLOGIK: Treffer-Prüfung
     // =========================
-    let randColor = null;
-    let randZahl = null;
     let topFace = 'f2'; // Anfangslage beim Spieleintritt
 
     function advanceTopFace() {
@@ -930,85 +928,16 @@
       card.mesh.scale.set(1, 1, 1);
     }
 
-    function fillCard(idx) {
-      const GAME_COLORS = [
-        { name: 'violett', hex: '#a41b85' },
-        { name: 'blau',    hex: '#006bb3' },
-        { name: 'gruen',   hex: '#00a652' },
-        { name: 'orange',  hex: '#e67814' }
-      ];
-      // Aktuelle Würfelfläche: 4 Zahlen mit Nachbarfarben → dürfen nicht kommen
-      function getCurrentWürfelKombis() {
-        const faceOffset = { f0: 0, f1: 4, f2: 8 };
-        const off = faceOffset[topFace];
-        const slots = ['S1', 'S2', 'S3', 'S4'];
-        const kombi = new Set();
-        slots.forEach((slot, i) => {
-          const zahl = deck[off + i];
-          const farbe = SLOT_NEIGHBOR_COLORS[currentQuadrant][slot];
-          kombi.add(zahl + '_' + farbe);
-        });
-        return kombi;
-      }
-
-      const wurzelKombis = getCurrentWürfelKombis();
-
-      // Neue Kombination bis eine nicht ausgeschlossen ist
-      do {
-        randColor = GAME_COLORS[Math.floor(Math.random() * 4)];
-        randZahl = Math.floor(Math.random() * 12) + 1;
-      } while (bereitsGetroffen.has(randZahl + '_' + randColor.name) || wurzelKombis.has(randZahl + '_' + randColor.name));
-
-      const card = gameCards[idx];
-      
-      // Farb-Textur laden und auf Canvas zeichnen
-      const colorTexture = colorTargetTextures[randColor.name];
-      const img = colorTexture.image;
-      
-      if (img && img.complete) {
-        // Bild ist bereits geladen
-        card.ctx.clearRect(0, 0, 85, 170);
-        card.ctx.drawImage(img, 0, 0, 85, 170);
-        
-        // Zahl 42px unter Oberkante
-        const displayText = randZahl + ((randZahl === 6 || randZahl === 9) ? '.' : '');
-        card.ctx.fillStyle = '#2a1810';
-        card.ctx.font = 'bold 56px Arial';
-        card.ctx.textAlign = 'center';
-        card.ctx.textBaseline = 'middle';
-        card.ctx.fillText(displayText, 42, 42);
-        
-        card.texture.needsUpdate = true;
-        card.mesh.material.map = card.texture;
-        card.mesh.material.transparent = false;
-        card.mesh.material.opacity = 1;
-        card.mesh.material.needsUpdate = true;
-      } else {
-        // Bild noch nicht geladen, warten
-        img.onload = () => {
-          card.ctx.clearRect(0, 0, 85, 170);
-          card.ctx.drawImage(img, 0, 0, 85, 170);
-          
-          const displayText = randZahl + ((randZahl === 6 || randZahl === 9) ? '.' : '');
-          card.ctx.fillStyle = '#2a1810';
-          card.ctx.font = 'bold 56px Arial';
-          card.ctx.textAlign = 'center';
-          card.ctx.textBaseline = 'middle';
-          card.ctx.fillText(displayText, 42, 42);
-          
-          card.texture.needsUpdate = true;
-          card.mesh.material.map = card.texture;
-          card.mesh.material.transparent = false;
-          card.mesh.material.opacity = 1;
-          card.mesh.material.needsUpdate = true;
-        };
-      }
-      
-      card.mesh.scale.set(1, 1, 1);
-    }
 
     function onRunde() {
       activeCardIdx++;
+      
+      // Nach 6 Versuchen: Spielende
+      if (activeCardIdx >= 6) {
+        showGameEnd();
+        return;
+      }
+      
       if (activeCardIdx === 3) {
         // Nach drittem Kärtchen: Würfel auf Ecke stellen, dann Pause-Phase
         setButtonsDisabled(true);
@@ -1026,6 +955,27 @@
         // Kärtchen ist schon generiert, nur weitermachen
         setButtonsDisabled(false);
       }
+    }
+    
+    function showGameEnd() {
+      gamePhase = 'ende';
+      setButtonsDisabled(true);
+      document.getElementById('richtungButtons').classList.add('hidden');
+      kippButtons.classList.add('hidden');
+      
+      // Wie viele Treffer?
+      const treffer = bereitsGetroffen.size;
+      
+      hintText.innerHTML = treffer === 6 
+        ? 'PERFEKT!<br>6 VON 6' 
+        : `${treffer} VON 6<br>GETROFFEN`;
+      hintText.style.display = 'block';
+      hintText.style.opacity = '1';
+      
+      actionButton.textContent = 'NOCHMAL';
+      actionButton.style.display = 'block';
+      actionButton.style.opacity = '1';
+      actionButton.onclick = () => location.reload();
     }
 
 
@@ -1257,58 +1207,16 @@
       }, () => {
         // 2. Groß bleiben für 2 Sekunden
         setTimeout(() => {
-          // 3. Zurück auf Normalgröße
-          animateVal(targetScale, origScale, 350, (s) => {
-            mesh.scale.set(s, s, s);
-          }, () => {
-            onRunde();
-          });
+          // 3. Ausblenden
+          mesh.visible = false;
+          onRunde();
         }, 2000);
       });
     }
 
     function animateNichtTreffer() {
-      // 1. Würfel-Oberseite langsam dunkelgrau und zurück (2s)
-      const matIdx = TOP_FACE_MAT_IDX[topFace];
-      const topMat = cube.material[matIdx];
-      const origColor = topMat.color.clone();
-      // Phase 1: normal → dunkelgrau (1s)
-      animateVal(0, 1, 1000, (t) => {
-        topMat.color.copy(origColor).lerp(new THREE.Color(0x303030), t);
-      }, () => {
-        // Phase 2: dunkelgrau → normal (1s)
-        animateVal(0, 1, 1000, (t) => {
-          topMat.color.copy(new THREE.Color(0x303030)).lerp(origColor, t);
-        }, () => {
-          onRunde();
-        });
-      });
-
-      // 2. 4 Farbfelder des Quadranten kurz transparent
-      const keys = QUADRANT_COLORS[currentQuadrant];
-      keys.forEach(key => {
-        const m = colorSquareMeshes[key];
-        if (!m) return;
-        m.material.transparent = true;
-        m.material.opacity = 0.12;
-        setTimeout(() => {
-          animateVal(0.12, 1.0, 350, (op) => { m.material.opacity = op; });
-        }, 250);
-      });
-
-      // 3. Kärtchen desätturieren
-      const card = gameCards[activeCardIdx];
-      card.ctx.fillStyle = DESAT_COLORS[card.color.name];
-      card.ctx.fillRect(0, 0, 85, 85);
-      card.ctx.fillStyle = '#807868';
-      card.ctx.fillRect(0, 85, 85, 85);
-      const displayText = card.zahl + ((card.zahl === 6 || card.zahl === 9) ? '.' : '');
-      card.ctx.fillStyle = '#5a5a5a';
-      card.ctx.font = 'bold 56px Arial';
-      card.ctx.textAlign = 'center';
-      card.ctx.textBaseline = 'middle';
-      card.ctx.fillText(displayText, 42, 128);
-      card.texture.needsUpdate = true;
+      // Kein Signal bei Fehltreffer - direkt weiter
+      onRunde();
     }
 
     let gamePhase = 'demo'; // Startet mit Demo-Phase
@@ -2351,18 +2259,20 @@
       kippDirection = direction;
       updateRichtungButtons();
 
-      // Kärtchen auf Originalfarben zurücksetzen
+      // Kärtchen auf Original zurücksetzen - Textur neu zeichnen
       const card = gameCards[activeCardIdx];
-      card.ctx.fillStyle = card.color.hex;
-      card.ctx.fillRect(0, 0, 85, 85);
-      card.ctx.fillStyle = '#a08060';
-      card.ctx.fillRect(0, 85, 85, 85);
+      const colorTexture = colorTargetTextures[card.color.name];
+      const img = colorTexture.image;
+      
+      card.ctx.clearRect(0, 0, 85, 170);
+      card.ctx.drawImage(img, 0, 0, 85, 170);
+      
       const displayText = card.zahl + ((card.zahl === 6 || card.zahl === 9) ? '.' : '');
       card.ctx.fillStyle = '#2a1810';
       card.ctx.font = 'bold 56px Arial';
       card.ctx.textAlign = 'center';
       card.ctx.textBaseline = 'middle';
-      card.ctx.fillText(displayText, 42, 128);
+      card.ctx.fillText(displayText, 42, 42);
       card.texture.needsUpdate = true;
       card.mesh.scale.set(1, 1, 1);
       card.mesh.material.opacity = 1.0;
