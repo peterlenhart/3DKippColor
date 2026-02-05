@@ -468,46 +468,7 @@
       canvas.width = 85;
       canvas.height = 170;
       const ctx = canvas.getContext('2d');
-      
-      // Random Farbe aus den 4 verfügbaren wählen
-      const colors = ['blau', 'orange', 'gruen', 'violett'];
-      const randomColor = colors[Math.floor(Math.random() * 4)];
-      const colorTexture = colorTargetTextures[randomColor];
-      
-      // Random Zahl 1-12
-      const randomZahl = Math.floor(Math.random() * 12) + 1;
-      const displayText = randomZahl + ((randomZahl === 6 || randomZahl === 9) ? '.' : '');
-      
-      // Versuchen, Textur zu laden, sonst Fallback
-      const img = colorTexture ? colorTexture.image : null;
-      if (img && img.complete) {
-        ctx.drawImage(img, 0, 0, 85, 170);
-        ctx.fillStyle = '#2a1810';
-        ctx.font = 'bold 56px Arial';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(displayText, 42, 42);
-      } else {
-        // Fallback: Einfarbige Rechtecke
-        ctx.fillStyle = '#888888';
-        ctx.fillRect(0, 0, 85, 85);
-        ctx.fillStyle = '#a08060';
-        ctx.fillRect(0, 85, 85, 85);
-        
-        if (img) {
-          img.onload = () => {
-            ctx.clearRect(0, 0, 85, 170);
-            ctx.drawImage(img, 0, 0, 85, 170);
-            ctx.fillStyle = '#2a1810';
-            ctx.font = 'bold 56px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(displayText, 42, 42);
-            const texture = gameCards[i].texture;
-            texture.needsUpdate = true;
-          };
-        }
-      }
+      // Canvas leer lassen - wird durch fillCard() beim Spielstart gefüllt
 
       const texture = new THREE.CanvasTexture(canvas);
       const geo = new THREE.PlaneGeometry(cardWidth, cardHeight);
@@ -1371,17 +1332,9 @@
     // =========================
     // DEMO-ANIMATION Phase 1
     // =========================
-    // Text-Sequenz: Text erscheint bei jedem Wobble
-    let textIndex = 0;
-    const texts = ['KIPPEN', 'SCHAUEN', 'MERKEN'];
     
     function showTextAtWobble() {
-      if (gamePhase !== 'demo') return;
-      hintText.textContent = texts[textIndex];
-      hintText.style.animation = 'none';
-      void hintText.offsetWidth;
-      hintText.style.animation = 'textSinglePulse 1.6s linear';
-      textIndex = (textIndex + 1) % texts.length;
+      // Text-Animation deaktiviert
     }
     
     function startDemoAnimation() {
@@ -1582,10 +1535,12 @@
       gameCards.forEach(c => c.mesh.visible = true);
       // shadowGradPlane.visible = true; // Schatten entfernt
 
-      // Erstes Kärtchen befüllen
+      // Alle 6 Kärtchen befüllen
       activeCardIdx = 0;
       bereitsGetroffen.clear();
-      fillCard(0);
+      for (let i = 0; i < 6; i++) {
+        fillCard(i);
+      }
       setButtonsDisabled(false);
     }
     
