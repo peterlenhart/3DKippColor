@@ -999,26 +999,6 @@
       card.isHit = true;
     }
     
-    function generateNeueKombi() {
-      // Alle möglichen Kombis
-      const alleMoeglichenKombis = [];
-      for (let z = 1; z <= 12; z++) {
-        for (const colorObj of GAME_COLORS) {
-          const key = z + '_' + colorObj.name;
-          // Nur Kombis die noch nicht ausgegeben wurden
-          if (!bereitsAusgegeben.has(key)) {
-            alleMoeglichenKombis.push({ zahl: z, color: colorObj });
-          }
-        }
-      }
-      
-      // Wenn keine mehr verfügbar, null zurückgeben
-      if (alleMoeglichenKombis.length === 0) return null;
-      
-      // Zufällige auswählen
-      const idx = Math.floor(Math.random() * alleMoeglichenKombis.length);
-      return alleMoeglichenKombis[idx];
-    }
 
     function generateNeueKombiOhne(ausschlussSet) {
       // Alle möglichen Kombis
@@ -1039,6 +1019,20 @@
       // Zufällige auswählen
       const idx = Math.floor(Math.random() * alleMoeglichenKombis.length);
       return alleMoeglichenKombis[idx];
+    }
+
+    function getCurrentErfuellteKombis() {
+      // Aktuelle Würfellage ermitteln und erfüllte Kombis zurückgeben
+      const faceOffset = { f0: 0, f1: 4, f2: 8 };
+      const off = faceOffset[topFace];
+      const erfuellteKombis = new Set();
+      const slots = ['S1', 'S2', 'S3', 'S4'];
+      slots.forEach((slot, i) => {
+        const zahl = deck[off + i];
+        const farbe = SLOT_NEIGHBOR_COLORS[currentQuadrant][slot];
+        erfuellteKombis.add(zahl + '_' + farbe);
+      });
+      return erfuellteKombis;
     }
 
 
@@ -1372,7 +1366,9 @@
           // activeCardIdx ist noch der alte Wert, +1 ist das nächste Kärtchen
           // AUSSER bei activeCardIdx === 2: Dann kommt Pause, Kärtchen 3 wird nach Pause generiert
           if (activeCardIdx < 5 && activeCardIdx !== 2) {
-            const neueKombi = generateNeueKombi();
+            // Aktuelle Würfellage prüfen und ausschließen
+            const erfuellteKombis = getCurrentErfuellteKombis();
+            const neueKombi = generateNeueKombiOhne(erfuellteKombis);
             if (neueKombi) {
               fillCardWithKombi(activeCardIdx + 1, neueKombi.zahl, neueKombi.color);
             }
@@ -1439,7 +1435,9 @@
       // Rechts daneben (activeCardIdx + 1) neues Ziel generieren
       // AUSSER bei activeCardIdx === 2: Dann kommt Pause, Kärtchen 3 wird nach Pause generiert
       if (activeCardIdx < 5 && activeCardIdx !== 2) {
-        const neueKombi = generateNeueKombi();
+        // Aktuelle Würfellage prüfen und ausschließen
+        const erfuellteKombis = getCurrentErfuellteKombis();
+        const neueKombi = generateNeueKombiOhne(erfuellteKombis);
         if (neueKombi) {
           fillCardWithKombi(activeCardIdx + 1, neueKombi.zahl, neueKombi.color);
         }
@@ -1697,62 +1695,7 @@
 
       // Kärtchen werden in fillAllCards() sichtbar gemacht - NICHT hier
 
-      // 6 unique Kombis generieren nach Regeln:
-      // 1. Keine Kombi doppelt
-      // 2. Keine Kombi die bereits erfüllt ist (Ausgangslage)
-      // 3. Genau 2 Kombis mit Zahlen die am Würfel sichtbar sind
-      
-      // Welche Kombis sind bereits erfüllt? (Ausgangslage Q3, f2)
-      const faceOffset = { f0: 0, f1: 4, f2: 8 };
-      const off = faceOffset[topFace];
-      const erfuellteKombis = new Set();
-      const slots = ['S1', 'S2', 'S3', 'S4'];
-      const sichtbareZahlen = [];
-      slots.forEach((slot, i) => {
-        const zahl = deck[off + i];
-        sichtbareZahlen.push(zahl);
-        const farbe = SLOT_NEIGHBOR_COLORS[currentQuadrant][slot];
-        erfuellteKombis.add(zahl + '_' + farbe);
-      });
-
-      // Alle möglichen Kombis (48 total)
-      const alleMoeglichenKombis = [];
-      for (let z = 1; z <= 12; z++) {
-        for (const colorObj of GAME_COLORS) {
-          const key = z + '_' + colorObj.name;
-          if (!erfuellteKombis.has(key)) {
-            alleMoeglichenKombis.push({ zahl: z, color: colorObj });
-          }
-        }
-      }
-
-      // Shuffle
-      for (let i = alleMoeglichenKombis.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [alleMoeglichenKombis[i], alleMoeglichenKombis[j]] = [alleMoeglichenKombis[j], alleMoeglichenKombis[i]];
-      }
-
-      // 2 Kombis mit sichtbaren Zahlen
-      const mitSichtbarenZahlen = alleMoeglichenKombis.filter(k => sichtbareZahlen.includes(k.zahl));
-      const ohneSichtbareZahlen = alleMoeglichenKombis.filter(k => !sichtbareZahlen.includes(k.zahl));
-
-      const ausgewaehlteKombis = [];
-      // 2 mit sichtbaren Zahlen
-      for (let i = 0; i < 2 && i < mitSichtbarenZahlen.length; i++) {
-        ausgewaehlteKombis.push(mitSichtbarenZahlen[i]);
-      }
-      // 4 ohne sichtbare Zahlen
-      for (let i = 0; i < 4 && i < ohneSichtbareZahlen.length; i++) {
-        ausgewaehlteKombis.push(ohneSichtbareZahlen[i]);
-      }
-
-      // Nochmal mischen damit die 2 sichtbaren nicht immer links sind
-      for (let i = ausgewaehlteKombis.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [ausgewaehlteKombis[i], ausgewaehlteKombis[j]] = [ausgewaehlteKombis[j], ausgewaehlteKombis[i]];
-      }
-
-      // Kärtchen befüllen mit den generierten Kombis
+      // Kärtchen befüllen: Nur das erste (Index 0) initial generieren
       activeCardIdx = 0;
       bereitsGetroffen.clear();
       bereitsAusgegeben.clear();
@@ -1771,9 +1714,13 @@
           setTimeout(fillAllCards, 50); // Nochmal in 50ms prüfen
           return;
         }
-        // Nur erstes Kärtchen (i=0) mit echtem Ziel befüllen
-        const kombi = ausgewaehlteKombis[0];
-        fillCardWithKombi(0, kombi.zahl, kombi.color);
+        
+        // Nur erstes Kärtchen (i=0) mit echtem Ziel befüllen - OHNE aktuell erfüllte Kombis
+        const erfuellteKombis = getCurrentErfuellteKombis();
+        const neueKombi = generateNeueKombiOhne(erfuellteKombis);
+        if (neueKombi) {
+          fillCardWithKombi(0, neueKombi.zahl, neueKombi.color);
+        }
         
         // Restliche 5 Kärtchen (i=1 bis i=5) mit leernohit.webp befüllen
         for (let i = 1; i < 6; i++) {
@@ -2161,19 +2108,9 @@
       });
       
       // Kärtchen 3: Neues Randomkippziel - OHNE aktuell erfüllte Kombis
-      // Welche Kombis sind jetzt erfüllt?
-      const faceOffset = { f0: 0, f1: 4, f2: 8 };
-      const off = faceOffset[topFace];
-      const erfuellteKombis = new Set();
-      const slots = ['S1', 'S2', 'S3', 'S4'];
-      slots.forEach((slot, i) => {
-        const zahl = deck[off + i];
-        const farbe = SLOT_NEIGHBOR_COLORS[currentQuadrant][slot];
-        erfuellteKombis.add(zahl + '_' + farbe);
-      });
-      
-      // Neue Kombi generieren die NICHT erfüllt ist
+      const erfuellteKombis = getCurrentErfuellteKombis();
       const neueKombi = generateNeueKombiOhne(erfuellteKombis);
+      
       if (neueKombi) {
         fillCardWithKombi(3, neueKombi.zahl, neueKombi.color);
       }
