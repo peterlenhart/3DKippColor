@@ -455,6 +455,23 @@
       imageLoadPromises.push(promise);
     });
     
+    // Leer-Image laden
+    let leerImage = null;
+    const leerPromise = new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        leerImage = img;
+        console.log('leernohit.webp loaded');
+        resolve();
+      };
+      img.onerror = () => {
+        console.error('Failed to load leernohit.webp');
+        reject();
+      };
+      img.src = 'leernohit.webp';
+    });
+    imageLoadPromises.push(leerPromise);
+    
     // Warten bis alle Bilder geladen sind
     let texturesReady = false;
     Promise.all(imageLoadPromises).then(() => {
@@ -1535,13 +1552,25 @@
       
       // Warten bis Texturen geladen sind, dann Kärtchen befüllen
       function fillAllCards() {
-        if (!texturesReady) {
+        if (!texturesReady || !leerImage) {
           setTimeout(fillAllCards, 50); // Nochmal in 50ms prüfen
           return;
         }
-        for (let i = 0; i < 6; i++) {
-          const kombi = ausgewaehlteKombis[i];
-          fillCardWithKombi(i, kombi.zahl, kombi.color);
+        // Nur erstes Kärtchen (i=0) mit echtem Ziel befüllen
+        const kombi = ausgewaehlteKombis[0];
+        fillCardWithKombi(0, kombi.zahl, kombi.color);
+        
+        // Restliche 5 Kärtchen (i=1 bis i=5) mit leernohit.webp befüllen
+        for (let i = 1; i < 6; i++) {
+          const card = gameCards[i];
+          card.ctx.clearRect(0, 0, 85, 170);
+          card.ctx.drawImage(leerImage, 0, 0, 85, 170);
+          card.texture.needsUpdate = true;
+          card.mesh.material.map = card.texture;
+          card.mesh.material.transparent = false;
+          card.mesh.material.opacity = 1;
+          card.mesh.material.needsUpdate = true;
+          card.mesh.scale.set(1, 1, 1);
         }
       }
       fillAllCards();
