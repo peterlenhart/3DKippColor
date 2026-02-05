@@ -73,7 +73,7 @@
     
     #brainScore {
       position: absolute;
-      top: 562px;
+      top: 552px;
       left: 50%;
       transform: translateX(-50%);
       text-align: center;
@@ -83,7 +83,7 @@
       text-shadow: 0 2px 4px rgba(0,0,0,0.8);
       pointer-events: none;
       width: 360px;
-      line-height: 1.3;
+      line-height: auto;
       opacity: 0;
       display: none;
     }
@@ -1070,6 +1070,37 @@
       }
     }
     
+    function calculateBrainScore(observationTime, hits) {
+      // Constants
+      const FREE_TIME = 30;
+      const MAX_TIME = 120;
+      const EXTRA_TIME_RANGE = 90; // MAX_TIME - FREE_TIME
+      const k = 1.0;
+      const c = 2.5976583;
+      
+      // Special case: no hits
+      if (hits === 0) {
+        return "No Hit, no Score";
+      }
+      
+      // Clamp observation time
+      let T = observationTime;
+      if (T < FREE_TIME) T = FREE_TIME;
+      if (T > MAX_TIME) T = MAX_TIME;
+      
+      // Time Factor
+      const E = Math.max(0, Math.min(T - FREE_TIME, EXTRA_TIME_RANGE));
+      const S_time = 1 - 0.31 * Math.pow(E / EXTRA_TIME_RANGE, 0.855);
+      
+      // Hit Factor (logistic)
+      const L = (H) => 1 / (1 + Math.exp(-k * (H - c)));
+      const S_hits = L(hits) / L(6);
+      
+      // Final Brain Score
+      const brainScore = 100 * S_time * S_hits;
+      return Math.round(brainScore);
+    }
+    
     function showGameEnd() {
       gamePhase = 'ende';
       setButtonsDisabled(true);
@@ -1079,6 +1110,9 @@
       // Wie viele Treffer?
       const treffer = bereitsGetroffen.size;
       
+      // Brain Score berechnen
+      const scoreValue = calculateBrainScore(totalObservationTime, treffer);
+      
       // hintText verstecken
       hintText.style.display = 'none';
       
@@ -1087,7 +1121,11 @@
       
       // Brain Score anzeigen
       const brainScore = document.getElementById('brainScore');
-      brainScore.innerHTML = 'BRAIN SCORE: 000<br><br>Best=100/worst=12';
+      if (scoreValue === "No Hit, no Score") {
+        brainScore.innerHTML = 'BRAIN SCORE:<br>No Hit, no Score';
+      } else {
+        brainScore.innerHTML = `BRAIN SCORE: ${scoreValue}<br>Best=100/worst=12`;
+      }
       brainScore.style.display = 'block';
       brainScore.style.opacity = '1';
     }
@@ -1166,6 +1204,7 @@
         let elapsed = 0;
         pauseTimerRef = setInterval(() => {
           elapsed++;
+          totalObservationTime++; // Beobachtungszeit tracken
           countdown.textContent = elapsed;
           if (elapsed >= 30) {
             clearInterval(pauseTimerRef);
@@ -1883,6 +1922,7 @@
     let pauseDragStartAlpha = 0;
     let pauseDragStartBeta  = 0;
     const PAUSE_SENSITIVITY = 200; // px für ~30°
+    let totalObservationTime = 0; // Sekunden für Brain Score Berechnung
 
     function getKippConfig(direction) {
       const configs = {
