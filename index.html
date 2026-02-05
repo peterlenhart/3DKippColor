@@ -70,6 +70,23 @@
       backface-visibility: hidden;
       -webkit-font-smoothing: antialiased;
     }
+    
+    #brainScore {
+      position: absolute;
+      top: 200px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      font-size: 28px;
+      font-weight: bold;
+      color: #d4b48c;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+      pointer-events: none;
+      width: 360px;
+      line-height: 1.3;
+      opacity: 0;
+      display: none;
+    }
 
     #countdown {
       position: absolute;
@@ -283,6 +300,7 @@
   <div id="uiOverlay">
     <div id="handIcon">👆</div>
     <div id="hintText"></div>
+    <div id="brainScore"></div>
     <div id="countdown">60</div>
     <button id="actionButton">weiter</button>
     <button id="backButton">↻</button>
@@ -971,8 +989,8 @@
     }
     
     function drawGoldenBorder(card) {
-      // CMYK: 18, 10, 85, 3 → RGB: #cee425
-      card.ctx.strokeStyle = '#cee425';
+      // CMYK: 18, 20, 85, 3 → RGB: #cedb25
+      card.ctx.strokeStyle = '#cedb25';
       card.ctx.lineWidth = 4;
       card.ctx.strokeRect(2, 2, 85 - 4, 170 - 4);
       card.texture.needsUpdate = true;
@@ -1040,16 +1058,17 @@
       // Wie viele Treffer?
       const treffer = bereitsGetroffen.size;
       
-      hintText.innerHTML = treffer === 6 
-        ? 'PERFEKT!<br>6 VON 6' 
-        : `${treffer} VON 6<br>GETROFFEN`;
-      hintText.style.display = 'block';
-      hintText.style.opacity = '1';
+      // hintText verstecken
+      hintText.style.display = 'none';
       
-      actionButton.textContent = 'NOCHMAL';
-      actionButton.style.display = 'block';
-      actionButton.style.opacity = '1';
-      actionButton.onclick = () => location.reload();
+      // actionButton verstecken
+      actionButton.style.display = 'none';
+      
+      // Brain Score anzeigen
+      const brainScore = document.getElementById('brainScore');
+      brainScore.innerHTML = 'BRAIN SCORE: 000<br>Best=100/worst=12';
+      brainScore.style.display = 'block';
+      brainScore.style.opacity = '1';
     }
 
 
@@ -1298,8 +1317,8 @@
                 c.ctx.clearRect(0, 0, 85, 170);
                 c.ctx.drawImage(leerImage, 0, 0, 85, 170);
                 c.texture.needsUpdate = true;
-                c.mesh.material.transparent = true;
-                c.mesh.material.opacity = 0.6;
+                c.mesh.material.transparent = false;
+                c.mesh.material.opacity = 1;
                 c.mesh.material.needsUpdate = true;
                 c.mesh.visible = true;
               }
@@ -1364,8 +1383,8 @@
             c.ctx.clearRect(0, 0, 85, 170);
             c.ctx.drawImage(leerImage, 0, 0, 85, 170);
             c.texture.needsUpdate = true;
-            c.mesh.material.transparent = true;
-            c.mesh.material.opacity = 0.6;
+            c.mesh.material.transparent = false;
+            c.mesh.material.opacity = 1;
             c.mesh.material.needsUpdate = true;
             c.mesh.visible = true;
           }
@@ -1695,8 +1714,8 @@
           card.ctx.drawImage(leerImage, 0, 0, 85, 170);
           card.texture.needsUpdate = true;
           card.mesh.material.map = card.texture;
-          card.mesh.material.transparent = true;
-          card.mesh.material.opacity = 0.6;
+          card.mesh.material.transparent = false;
+          card.mesh.material.opacity = 1;
           card.mesh.material.needsUpdate = true;
           card.mesh.scale.set(1, 1, 1);
           card.mesh.visible = true;
@@ -2093,8 +2112,8 @@
           card.ctx.drawImage(leerImage, 0, 0, 85, 170);
           card.texture.needsUpdate = true;
           card.mesh.visible = true;
-          card.mesh.material.transparent = true;
-          card.mesh.material.opacity = 0.6;
+          card.mesh.material.transparent = false;
+          card.mesh.material.opacity = 1;
           card.mesh.material.needsUpdate = true;
         }
       }
