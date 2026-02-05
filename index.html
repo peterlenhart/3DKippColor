@@ -172,28 +172,11 @@
       }
     }
 
-    /* PLATZHALTER-RECHTECKE */
-    #placeholderRow {
-      position: absolute;
-      top: 443px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 8px;
-      pointer-events: none;
-    }
-
-    .placeholder {
-      width: 45px;
-      height: 90px;
-      background: linear-gradient(to bottom, #888888 50%, #a08060 50%);
-      border-radius: 4px;
-    }
 
     /* BUTTONS 1-6 */
     #kippButtons {
       position: absolute;
-      top: 605px;
+      top: 650px;
       left: 50%;
       transform: translateX(-50%);
       display: flex;
@@ -304,16 +287,7 @@
     <button id="actionButton">weiter</button>
     <button id="backButton">↻</button>
     
-    <!-- Platzhalter-Rechtecke (Phase 3) -->
-    <div id="placeholderRow" class="hidden">
-      <div class="placeholder" id="targetRect"></div>
-      <div class="placeholder"></div>
-      <div class="placeholder"></div>
-      <div class="placeholder"></div>
-      <div class="placeholder"></div>
-      <div class="placeholder"></div>
-    </div>
-    <div id="richtungButtons" class="hidden" style="position:absolute;top:540px;left:50%;transform:translateX(-50%);display:flex;gap:21px;width:180px;z-index:200;">
+    <div id="richtungButtons" class="hidden" style="position:absolute;top:585px;left:50%;transform:translateX(-50%);display:flex;gap:21px;width:180px;z-index:200;">
       <button id="cwBtn" class="kippBtn" style="flex:1;height:45px;font-size:40px;line-height:1;position:relative;"><span style="position:absolute;top:calc(50% - 3px);left:50%;transform:translate(-50%,-50%);font-size:40px;">↻</span></button>
       <button id="ccwBtn" class="kippBtn" style="flex:1;height:45px;font-size:40px;line-height:1;position:relative;"><span style="position:absolute;top:calc(50% - 3px);left:50%;transform:translate(-50%,-50%);font-size:40px;">↺</span></button>
     </div>
@@ -875,20 +849,21 @@
     };
 
     function checkTreffer() {
+      const card = gameCards[activeCardIdx];
       const faceOffset = { f0: 0, f1: 4, f2: 8 };
       const off = faceOffset[topFace];
       const visible = { S1: deck[off], S2: deck[off+1], S3: deck[off+2], S4: deck[off+3] };
 
-      // Ist randZahl sichtbar?
+      // Ist card.zahl sichtbar?
       let hitSlot = null;
       for (const [slot, val] of Object.entries(visible)) {
-        if (val === randZahl) { hitSlot = slot; break; }
+        if (val === card.zahl) { hitSlot = slot; break; }
       }
       if (!hitSlot) return false;
 
       // Nachbarfarbe prüfen
       const neighborColor = SLOT_NEIGHBOR_COLORS[currentQuadrant][hitSlot];
-      return neighborColor === randColor.name;
+      return neighborColor === card.color.name;
     }
 
     // Generische Animation eines Wertes über Zeit
@@ -906,6 +881,59 @@
 
     let activeCardIdx = 0;
     const bereitsGetroffen = new Set(); // "zahl_farbe" Kombinationen die bereits Treffer waren
+
+    function fillCardWithKombi(idx, zahl, colorObj) {
+      const card = gameCards[idx];
+      
+      // Zahl und Farbe im Card-Object speichern
+      card.zahl = zahl;
+      card.color = colorObj;
+      
+      // Farb-Textur laden und auf Canvas zeichnen
+      const colorTexture = colorTargetTextures[colorObj.name];
+      const img = colorTexture.image;
+      
+      if (img && img.complete) {
+        // Bild ist bereits geladen
+        card.ctx.clearRect(0, 0, 85, 170);
+        card.ctx.drawImage(img, 0, 0, 85, 170);
+        
+        // Zahl 42px unter Oberkante
+        const displayText = zahl + ((zahl === 6 || zahl === 9) ? '.' : '');
+        card.ctx.fillStyle = '#2a1810';
+        card.ctx.font = 'bold 56px Arial';
+        card.ctx.textAlign = 'center';
+        card.ctx.textBaseline = 'middle';
+        card.ctx.fillText(displayText, 42, 42);
+        
+        card.texture.needsUpdate = true;
+        card.mesh.material.map = card.texture;
+        card.mesh.material.transparent = false;
+        card.mesh.material.opacity = 1;
+        card.mesh.material.needsUpdate = true;
+      } else {
+        // Bild noch nicht geladen, warten
+        img.onload = () => {
+          card.ctx.clearRect(0, 0, 85, 170);
+          card.ctx.drawImage(img, 0, 0, 85, 170);
+          
+          const displayText = zahl + ((zahl === 6 || zahl === 9) ? '.' : '');
+          card.ctx.fillStyle = '#2a1810';
+          card.ctx.font = 'bold 56px Arial';
+          card.ctx.textAlign = 'center';
+          card.ctx.textBaseline = 'middle';
+          card.ctx.fillText(displayText, 42, 42);
+          
+          card.texture.needsUpdate = true;
+          card.mesh.material.map = card.texture;
+          card.mesh.material.transparent = false;
+          card.mesh.material.opacity = 1;
+          card.mesh.material.needsUpdate = true;
+        };
+      }
+      
+      card.mesh.scale.set(1, 1, 1);
+    }
 
     function fillCard(idx) {
       const GAME_COLORS = [
@@ -987,7 +1015,7 @@
     function onRunde() {
       activeCardIdx++;
       if (activeCardIdx === 3) {
-        // Nach drittem Kärtchen: Würfel auf Ecke stelken, dann Pause-Phase
+        // Nach drittem Kärtchen: Würfel auf Ecke stellen, dann Pause-Phase
         setButtonsDisabled(true);
         document.getElementById('richtungButtons').classList.add('hidden');
         kippButtons.classList.add('hidden');
@@ -1000,7 +1028,7 @@
         return;
       }
       if (activeCardIdx < gameCards.length) {
-        fillCard(activeCardIdx);
+        // Kärtchen ist schon generiert, nur weitermachen
         setButtonsDisabled(false);
       }
     }
@@ -1275,11 +1303,11 @@
 
       // 3. Kärtchen desätturieren
       const card = gameCards[activeCardIdx];
-      card.ctx.fillStyle = DESAT_COLORS[randColor.name];
+      card.ctx.fillStyle = DESAT_COLORS[card.color.name];
       card.ctx.fillRect(0, 0, 85, 85);
       card.ctx.fillStyle = '#807868';
       card.ctx.fillRect(0, 85, 85, 85);
-      const displayText = randZahl + ((randZahl === 6 || randZahl === 9) ? '.' : '');
+      const displayText = card.zahl + ((card.zahl === 6 || card.zahl === 9) ? '.' : '');
       card.ctx.fillStyle = '#5a5a5a';
       card.ctx.font = 'bold 56px Arial';
       card.ctx.textAlign = 'center';
@@ -1517,29 +1545,80 @@
       // UI umschalten
       hintText.style.display = 'none';
       actionButton.style.display = 'none';
-      document.getElementById('placeholderRow').classList.add('hidden'); // wird durch Three.js Kärtchen ersetzt
       document.getElementById('richtungButtons').classList.remove('hidden');
       kippButtons.classList.remove('hidden');
 
-      // Random Farbe + Zahl generieren
       const GAME_COLORS = [
         { name: 'violett', hex: '#a41b85' },
         { name: 'blau',    hex: '#006bb3' },
         { name: 'gruen',   hex: '#00a652' },
         { name: 'orange',  hex: '#e67814' }
       ];
-      randColor = GAME_COLORS[Math.floor(Math.random() * 4)];
-      randZahl = Math.floor(Math.random() * 12) + 1;
 
       // Kärtchen sichtbar machen
       gameCards.forEach(c => c.mesh.visible = true);
-      // shadowGradPlane.visible = true; // Schatten entfernt
 
-      // Alle 6 Kärtchen befüllen
+      // 6 unique Kombis generieren nach Regeln:
+      // 1. Keine Kombi doppelt
+      // 2. Keine Kombi die bereits erfüllt ist (Ausgangslage)
+      // 3. Genau 2 Kombis mit Zahlen die am Würfel sichtbar sind
+      
+      // Welche Kombis sind bereits erfüllt? (Ausgangslage Q3, f2)
+      const faceOffset = { f0: 0, f1: 4, f2: 8 };
+      const off = faceOffset[topFace];
+      const erfuellteKombis = new Set();
+      const slots = ['S1', 'S2', 'S3', 'S4'];
+      const sichtbareZahlen = [];
+      slots.forEach((slot, i) => {
+        const zahl = deck[off + i];
+        sichtbareZahlen.push(zahl);
+        const farbe = SLOT_NEIGHBOR_COLORS[currentQuadrant][slot];
+        erfuellteKombis.add(zahl + '_' + farbe);
+      });
+
+      // Alle möglichen Kombis (48 total)
+      const alleMoeglichenKombis = [];
+      for (let z = 1; z <= 12; z++) {
+        for (const colorObj of GAME_COLORS) {
+          const key = z + '_' + colorObj.name;
+          if (!erfuellteKombis.has(key)) {
+            alleMoeglichenKombis.push({ zahl: z, color: colorObj });
+          }
+        }
+      }
+
+      // Shuffle
+      for (let i = alleMoeglichenKombis.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [alleMoeglichenKombis[i], alleMoeglichenKombis[j]] = [alleMoeglichenKombis[j], alleMoeglichenKombis[i]];
+      }
+
+      // 2 Kombis mit sichtbaren Zahlen
+      const mitSichtbarenZahlen = alleMoeglichenKombis.filter(k => sichtbareZahlen.includes(k.zahl));
+      const ohneSichtbareZahlen = alleMoeglichenKombis.filter(k => !sichtbareZahlen.includes(k.zahl));
+
+      const ausgewaehlteKombis = [];
+      // 2 mit sichtbaren Zahlen
+      for (let i = 0; i < 2 && i < mitSichtbarenZahlen.length; i++) {
+        ausgewaehlteKombis.push(mitSichtbarenZahlen[i]);
+      }
+      // 4 ohne sichtbare Zahlen
+      for (let i = 0; i < 4 && i < ohneSichtbareZahlen.length; i++) {
+        ausgewaehlteKombis.push(ohneSichtbareZahlen[i]);
+      }
+
+      // Nochmal mischen damit die 2 sichtbaren nicht immer links sind
+      for (let i = ausgewaehlteKombis.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [ausgewaehlteKombis[i], ausgewaehlteKombis[j]] = [ausgewaehlteKombis[j], ausgewaehlteKombis[i]];
+      }
+
+      // Kärtchen befüllen mit den generierten Kombis
       activeCardIdx = 0;
       bereitsGetroffen.clear();
       for (let i = 0; i < 6; i++) {
-        fillCard(i);
+        const kombi = ausgewaehlteKombis[i];
+        fillCardWithKombi(i, kombi.zahl, kombi.color);
       }
       setButtonsDisabled(false);
     }
@@ -1565,7 +1644,6 @@
       actionButton.style.display = 'block';
       actionButton.classList.remove('pulse');
       kippButtons.classList.add('hidden');
-      document.getElementById('placeholderRow').classList.add('hidden');
       document.getElementById('richtungButtons').classList.add('hidden');
       
       // Kärtchen verstecken
@@ -1893,16 +1971,13 @@
       document.getElementById('richtungButtons').classList.remove('hidden');
       kippButtons.classList.remove('hidden');
 
-      // Kärtchen befüllen + sichtbar machen
+      // Kärtchen sichtbar machen (sind schon beim Spielstart generiert)
       pauseLights.forEach(l => l.visible = false);
-      // shadowGradPlane.visible = true; // Schatten entfernt
-      // shadowGradPlane.material.opacity = 1;
       gameCards.forEach((c, i) => {
         c.mesh.visible = (i <= activeCardIdx);
         c.mesh.material.opacity = 1;
         c.mesh.material.transparent = false;
       });
-      fillCard(activeCardIdx);
       setButtonsDisabled(false);
     }
 
@@ -2273,11 +2348,11 @@
 
       // Kärtchen auf Originalfarben zurücksetzen
       const card = gameCards[activeCardIdx];
-      card.ctx.fillStyle = randColor.hex;
+      card.ctx.fillStyle = card.color.hex;
       card.ctx.fillRect(0, 0, 85, 85);
       card.ctx.fillStyle = '#a08060';
       card.ctx.fillRect(0, 85, 85, 85);
-      const displayText = randZahl + ((randZahl === 6 || randZahl === 9) ? '.' : '');
+      const displayText = card.zahl + ((card.zahl === 6 || card.zahl === 9) ? '.' : '');
       card.ctx.fillStyle = '#2a1810';
       card.ctx.font = 'bold 56px Arial';
       card.ctx.textAlign = 'center';
@@ -2292,7 +2367,7 @@
       // Treffer-Prüfung
       const treffer = checkTreffer();
       if (treffer) {
-        bereitsGetroffen.add(randZahl + '_' + randColor.name);
+        bereitsGetroffen.add(card.zahl + '_' + card.color.name);
         animateTreffer();
       } else {
         animateNichtTreffer();
