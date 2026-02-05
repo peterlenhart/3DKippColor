@@ -1020,6 +1020,27 @@
       return alleMoeglichenKombis[idx];
     }
 
+    function generateNeueKombiOhne(ausschlussSet) {
+      // Alle möglichen Kombis
+      const alleMoeglichenKombis = [];
+      for (let z = 1; z <= 12; z++) {
+        for (const colorObj of GAME_COLORS) {
+          const key = z + '_' + colorObj.name;
+          // Nur Kombis die noch nicht ausgegeben wurden UND nicht im Ausschluss-Set
+          if (!bereitsAusgegeben.has(key) && !ausschlussSet.has(key)) {
+            alleMoeglichenKombis.push({ zahl: z, color: colorObj });
+          }
+        }
+      }
+      
+      // Wenn keine mehr verfügbar, null zurückgeben
+      if (alleMoeglichenKombis.length === 0) return null;
+      
+      // Zufällige auswählen
+      const idx = Math.floor(Math.random() * alleMoeglichenKombis.length);
+      return alleMoeglichenKombis[idx];
+    }
+
 
     function onRunde() {
       activeCardIdx++;
@@ -1066,7 +1087,7 @@
       
       // Brain Score anzeigen
       const brainScore = document.getElementById('brainScore');
-      brainScore.innerHTML = 'BRAIN SCORE: 000<br>Best=100/worst=12';
+      brainScore.innerHTML = 'BRAIN SCORE: 000<br><br>Best=100/worst=12';
       brainScore.style.display = 'block';
       brainScore.style.opacity = '1';
     }
@@ -1099,7 +1120,8 @@
         });
         shadowGradPlane.material.opacity = t;
       }, () => {
-        // Kärtchen sind jetzt auf opacity 0 (bleiben aber visible)
+        // Kärtchen komplett ausblenden
+        gameCards.forEach(c => c.mesh.visible = false);
         pauseLights.forEach(l => l.visible = true);
 
         // Pause-Pivot auf der Ecke erstellen
@@ -1123,10 +1145,8 @@
         pauseBeta  = 0;
         pauseDragActive = false;
 
-        // UI faden ein
-        hintText.innerHTML = 'KIPPEN<br>SCHAUEN<br>MERKEN';
-        hintText.style.opacity = '0';
-        hintText.style.display = 'block';
+        // UI faden ein (ohne Text)
+        hintText.style.display = 'none';
         actionButton.textContent = 'weiter';
         actionButton.style.opacity = '0';
         actionButton.style.display = 'block';
@@ -1136,10 +1156,8 @@
 
         // requestAnimationFrame damit display:block erstmal greift
         requestAnimationFrame(() => {
-          hintText.style.transition = 'opacity 0.4s ease';
           actionButton.style.transition = 'opacity 0.4s ease';
           countdown.style.transition = 'opacity 0.4s ease';
-          hintText.style.opacity = '1';
           actionButton.style.opacity = '1';
           countdown.style.opacity = '1';
         });
@@ -2084,8 +2102,9 @@
       // Pause-Lichter aus
       pauseLights.forEach(l => l.visible = false);
       
-      // Alle 6 Kärtchen auf gespeicherte opacity wiederherstellen
+      // Alle 6 Kärtchen sichtbar machen und auf gespeicherte opacity wiederherstellen
       gameCards.forEach((c, i) => {
+        c.mesh.visible = true;
         if (i < savedCardOpacities.length) {
           c.mesh.material.opacity = savedCardOpacities[i];
           c.mesh.material.transparent = (savedCardOpacities[i] < 1);
@@ -2093,8 +2112,20 @@
         }
       });
       
-      // Kärtchen 3: Neues Randomkippziel
-      const neueKombi = generateNeueKombi();
+      // Kärtchen 3: Neues Randomkippziel - OHNE aktuell erfüllte Kombis
+      // Welche Kombis sind jetzt erfüllt?
+      const faceOffset = { f0: 0, f1: 4, f2: 8 };
+      const off = faceOffset[topFace];
+      const erfuellteKombis = new Set();
+      const slots = ['S1', 'S2', 'S3', 'S4'];
+      slots.forEach((slot, i) => {
+        const zahl = deck[off + i];
+        const farbe = SLOT_NEIGHBOR_COLORS[currentQuadrant][slot];
+        erfuellteKombis.add(zahl + '_' + farbe);
+      });
+      
+      // Neue Kombi generieren die NICHT erfüllt ist
+      const neueKombi = generateNeueKombiOhne(erfuellteKombis);
       if (neueKombi) {
         fillCardWithKombi(3, neueKombi.zahl, neueKombi.color);
       }
