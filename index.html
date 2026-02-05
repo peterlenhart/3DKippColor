@@ -970,8 +970,8 @@
     }
     
     function drawGoldenBorder(card) {
-      // Goldgelben 4px Rahmen auf Canvas zeichnen
-      card.ctx.strokeStyle = '#d4b48c';
+      // CMYK: 8, 5, 85, 3 → RGB: #e4eb25
+      card.ctx.strokeStyle = '#e4eb25';
       card.ctx.lineWidth = 4;
       card.ctx.strokeRect(2, 2, 85 - 4, 170 - 4);
       card.texture.needsUpdate = true;
@@ -1315,7 +1315,22 @@
     }
 
     function animateNichtTreffer() {
-      // Kein Signal bei Fehltreffer - direkt weiter
+      const card = gameCards[activeCardIdx];
+      
+      // Aktuelles Kärtchen durch leernohit ersetzen
+      card.ctx.clearRect(0, 0, 85, 170);
+      card.ctx.drawImage(leerImage, 0, 0, 85, 170);
+      card.texture.needsUpdate = true;
+      
+      // Rechts daneben (activeCardIdx + 1) neues Ziel generieren
+      if (activeCardIdx < 5) {
+        const neueKombi = generateNeueKombi();
+        if (neueKombi) {
+          fillCardWithKombi(activeCardIdx + 1, neueKombi.zahl, neueKombi.color);
+        }
+      }
+      
+      // Weiter zur nächsten Runde
       onRunde();
     }
 
