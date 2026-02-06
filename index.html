@@ -1051,6 +1051,16 @@
         return;
       }
       
+      // ERST: NEUES KÄRTCHEN GENERIEREN
+      if (activeCardIdx < 6) {
+        const erfuellteKombis = getCurrentErfuellteKombis();
+        const neueKombi = generateNeueKombiOhne(erfuellteKombis);
+        if (neueKombi) {
+          fillCardWithKombi(activeCardIdx, neueKombi.zahl, neueKombi.color);
+        }
+      }
+      
+      // DANN: Pause-Check
       if (activeCardIdx === 3) {
         // Nach drittem Kärtchen: Würfel auf Ecke stellen, dann Pause-Phase
         setButtonsDisabled(true);
@@ -1065,16 +1075,6 @@
           startPausePhase();
         });
         return;
-      }
-      
-      // NEUES KÄRTCHEN GENERIEREN - klarer Impuls nach jedem Spielerzug
-      // (außer nach Kärtchen 2, da kommt Pause und Generierung in finishPauseToSpiel)
-      if (activeCardIdx < 6) {
-        const erfuellteKombis = getCurrentErfuellteKombis();
-        const neueKombi = generateNeueKombiOhne(erfuellteKombis);
-        if (neueKombi) {
-          fillCardWithKombi(activeCardIdx, neueKombi.zahl, neueKombi.color);
-        }
       }
       
       // Weiterspielen
@@ -2069,13 +2069,6 @@
           }
         }
       });
-      
-      // Kärtchen 3: Neues Randomkippziel generieren
-      const erfuellteKombis = getCurrentErfuellteKombis();
-      const neueKombi = generateNeueKombiOhne(erfuellteKombis);
-      if (neueKombi) {
-        fillCardWithKombi(3, neueKombi.zahl, neueKombi.color);
-      }
       
       setButtonsDisabled(false);
     }
