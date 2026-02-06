@@ -495,9 +495,12 @@
     Promise.all(imageLoadPromises).then(() => {
       texturesReady = true;
       console.log('All 4 color textures ready');
+      // WICHTIG: Button erst jetzt aktivieren
+      actionButton.disabled = false;
     }).catch(() => {
       console.error('Some textures failed to load');
-      texturesReady = true; // Trotzdem weitermachen
+      texturesReady = true;
+      actionButton.disabled = false; // Trotzdem weitermachen
     });
     
     for (let i = 0; i < 6; i++) {
@@ -870,6 +873,9 @@
     const actionButton = document.getElementById('actionButton');
     const backButton = document.getElementById('backButton');
     const kippButtons = document.getElementById('kippButtons');
+    
+    // WICHTIG: Button disabled bis Texturen geladen sind
+    actionButton.disabled = true;
 
     // =========================
     // SPIELLOGIK: Treffer-Prüfung
@@ -1060,10 +1066,19 @@
         });
         return;
       }
-      if (activeCardIdx < gameCards.length) {
-        // Kärtchen ist schon generiert, nur weitermachen
-        setButtonsDisabled(false);
+      
+      // NEUES KÄRTCHEN GENERIEREN - klarer Impuls nach jedem Spielerzug
+      // (außer nach Kärtchen 2, da kommt Pause und Generierung in finishPauseToSpiel)
+      if (activeCardIdx < 6) {
+        const erfuellteKombis = getCurrentErfuellteKombis();
+        const neueKombi = generateNeueKombiOhne(erfuellteKombis);
+        if (neueKombi) {
+          fillCardWithKombi(activeCardIdx, neueKombi.zahl, neueKombi.color);
+        }
       }
+      
+      // Weiterspielen
+      setButtonsDisabled(false);
     }
     
     function calculateBrainScore(observationTime, hits) {
@@ -1368,17 +1383,7 @@
           // Animation fertig - Rahmen hinzufügen
           drawGoldenBorder(card);
           
-          // Nächstes Kärtchen befüllen (wenn vorhanden)
-          // AUSSER bei activeCardIdx === 2: Dann kommt Pause, Kärtchen 3 wird nach Pause generiert
-          if (activeCardIdx < 5 && activeCardIdx !== 2) {
-            const erfuellteKombis = getCurrentErfuellteKombis();
-            const neueKombi = generateNeueKombiOhne(erfuellteKombis);
-            if (neueKombi) {
-              fillCardWithKombi(activeCardIdx + 1, neueKombi.zahl, neueKombi.color);
-            }
-          }
-          
-          // Weiter zur nächsten Runde (onRunde erhöht activeCardIdx)
+          // Weiter zur nächsten Runde (onRunde erhöht activeCardIdx und generiert nächstes Kärtchen)
           onRunde();
           return;
         }
@@ -1422,17 +1427,7 @@
       card.color = null;
       card.isMiss = true;
       
-      // Nächstes Kärtchen generieren
-      // AUSSER bei activeCardIdx === 2: Dann kommt Pause, Kärtchen 3 wird nach Pause generiert
-      if (activeCardIdx < 5 && activeCardIdx !== 2) {
-        const erfuellteKombis = getCurrentErfuellteKombis();
-        const neueKombi = generateNeueKombiOhne(erfuellteKombis);
-        if (neueKombi) {
-          fillCardWithKombi(activeCardIdx + 1, neueKombi.zahl, neueKombi.color);
-        }
-      }
-      
-      // Weiter zur nächsten Runde
+      // Weiter zur nächsten Runde (onRunde erhöht activeCardIdx und generiert nächstes Kärtchen)
       onRunde();
     }
 
