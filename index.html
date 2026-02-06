@@ -73,7 +73,7 @@
     
     #brainScore {
       position: absolute;
-      top: 543px;
+      top: 534px;
       left: 50%;
       transform: translateX(-50%);
       text-align: center;
@@ -1094,7 +1094,13 @@
       
       // Final Brain Score
       const brainScore = 100 * S_time * S_hits;
-      return Math.round(brainScore);
+      
+      // Formatierung: 1 Kommastelle mit %, außer bei 100%
+      if (Math.abs(brainScore - 100) < 0.05) {
+        return "100%";
+      } else {
+        return brainScore.toFixed(1).replace('.', ',') + '%';
+      }
     }
     
     function showGameEnd() {
@@ -1120,7 +1126,7 @@
       if (scoreValue === "No Hit, no Score") {
         brainScore.innerHTML = 'BRAIN SCORE:<br>No Hit, no Score';
       } else {
-        brainScore.innerHTML = `BRAIN SCORE: ${scoreValue}<br>Best=100/worst=12`;
+        brainScore.innerHTML = `BRAIN SCORE: ${scoreValue}<br>Best=100%/worst=12%`;
       }
       brainScore.style.display = 'block';
       brainScore.style.opacity = '1';
