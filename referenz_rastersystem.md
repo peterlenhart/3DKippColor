@@ -53,6 +53,11 @@
 - **Q2 (Südost):** X>0, Z>0.1105 - Ecke bei (+3 Zellen, +3 Zellen rel.)
 - **Q3 (Südwest):** X<0, Z>0.1105 - Ecke bei (-3 Zellen, +3 Zellen rel.) - **STARTPOSITION**
 
+**Benachbarte Quadranten (für Tap-Counter Anzeige):**
+```javascript
+const ADJACENT_Q = { 0: [3, 1], 1: [0, 2], 2: [1, 3], 3: [0, 2] };
+```
+
 ---
 
 ## Rasterzellen-System
@@ -60,8 +65,8 @@
 **Design-Auflösung:** 360×720 Pixel (logisch, nicht physisch)
 
 **Grid-Einteilung:**
-- Horizontal: 8 Spalten
-- Vertikal: 16 Zeilen
+- Horizontal: 8 Spalten (A–H)
+- Vertikal: 16 Zeilen (1–16)
 - **1 Rasterzelle = 45px**
 
 **Maßstab & Umrechnungen:**
@@ -247,10 +252,13 @@ const cardZ = 0.890625;                          // 4 Zeilen südlich + Kartenmi
 
 **Canvas-Textur:**
 - Größe: 85×170 Pixel
-- Obere Hälfte: Grau (#888888)
-- Untere Hälfte: Beige (#a08060)
 - Material: `MeshStandardMaterial` mit `DoubleSide`
 - Rotation: `-Math.PI/2` (horizontal auf π1)
+
+**Kärtchen-Darstellung:**
+- Oberfläche: WebP-Texturen pro Farbe (z.B. `blauzielhit.webp`, `gruenzielhit.webp`, etc.)
+- Zahl: Bold 56px Arial, Farbe `#2a1810`, zentriert bei y=42px
+- 6/9-Unterscheidung: Punkt nach der Zahl (`6.` bzw. `9.`)
 
 **Schatten-Gradient über Kärtchen:**
 ```javascript
@@ -258,6 +266,24 @@ shadowGradPlane.position.set(0, 0.004, 0.890625); // auf cardZ
 // Breite: 1.25 (8 Zellen), Höhe: 0.3125 (2 Zellen)
 // Gradient: Nord schwarz (0.5 opacity) → Mitte/Süd transparent
 ```
+
+---
+
+## Verdecktes Kippziel (3D Mesh)
+
+**Funktion:** Zeigt das nächste aufzudeckende Kippziel als verdecktes Kärtchen in der Kärtchenreihe.
+
+```javascript
+const verdecktesMesh = new THREE.Mesh(verdecktesGeo, verdecktesMat);
+verdecktesMesh.rotation.x = -Math.PI / 2;
+verdecktesMesh.position.set(cardStartX, cardY + 0.001, cardZ);
+```
+
+**Textur:** `leernohit.webp` (leeres Kärtchen ohne Treffer-Markierung)
+**Canvas:** 85×170px, CanvasTexture
+**Zustand:** `verdecktesMesh.userData.revealed` (true/false)
+
+**Positionierung:** Dynamisch auf Position des nächsten Kärtchens (cardStartX + activeCardIdx × Abstand)
 
 ---
 
@@ -282,20 +308,16 @@ frameMaterial: MeshStandardMaterial({
 **Rahmen-Positionen:**
 ```javascript
 // Nord-Rahmen
-position: (0, 0.46875, wallInnerNorth - frameWidth/2)
-// = (0, 0.46875, -0.437500)
+position: (0, 0.46875, -0.437500)
 
 // Süd-Rahmen
-position: (0, 0.46875, wallInnerSouth + frameWidth/2)
-// = (0, 0.46875, 0.658000)
+position: (0, 0.46875, 0.658000)
 
 // West-Rahmen (6 Zellen lang = 0.9375)
-position: (wallInnerWest - frameWidth/2, 0.46875, 0.1105)
-// = (-0.546875, 0.46875, 0.1105)
+position: (-0.546875, 0.46875, 0.1105)
 
 // Ost-Rahmen (6 Zellen lang = 0.9375)
-position: (wallInnerEast + frameWidth/2, 0.46875, 0.1105)
-// = (0.546875, 0.46875, 0.1105)
+position: (0.546875, 0.46875, 0.1105)
 ```
 
 **Rahmen-Kanten (Linien):**
@@ -386,16 +408,20 @@ rowZ(row) = wallInnerNorth + (row - 4) × cellSize + cellSize/2
 ## Würfel-Textur & Slot-System
 
 **Würfel-Textur:**
-- Format: WebP Base64-embedded
-- Variable: `cubeTexImg.src`
-- Verwendet in: 3×3 Grid-Textur für Würfelflächen
+- Format: WebP Base64-embedded (cubeTexImg)
+- Sättigung: reduziert dargestellt auf 3×3 Canvas-Grid
+- Leere-Würfelflächen-Textur: `leerewfl.webp`
 
-**Slot-Zuordnung (deck → face):**
+**Deck (Zahlen 1-12, randomisiert):**
 ```javascript
-// deck[0-3]  → f0 (Face 0)
-// deck[4-7]  → f1 (Face 1)
-// deck[8-11] → f2 (Face 2)
+const deck = shuffle([1,2,3,4,5,6,7,8,9,10,11,12]);
+// deck[0-3]  → f0 (Face 0) Slots S1-S4
+// deck[4-7]  → f1 (Face 1) Slots S1-S4
+// deck[8-11] → f2 (Face 2) Slots S1-S4
+```
 
+**Face-Zuordnung (3 Faces mit je 4 sichtbaren Zahlen):**
+```javascript
 // Face 0: Zellen 7=S1, 4=S2, 2=S3, 3=S4
 // Face 1: Zellen 10=S1, 11=S2, 15=S3, 18=S4
 // Face 2: Zellen 27=S1, 26=S2, 22=S3, 19=S4
@@ -406,7 +432,6 @@ rowZ(row) = wallInnerNorth + (row - 4) × cellSize + cellSize/2
 function createFaceTexture(slotMap, imgRotation) {
   canvas: 256×256
   cell: 256/3 = 85.33px
-  
   // Würfel-Textur als Hintergrund (optional rotiert)
   // Slot-Zellen beschriftet mit Farbe #2a1810
   // Font: bold 56px Arial
@@ -417,11 +442,329 @@ function createFaceTexture(slotMap, imgRotation) {
 ```javascript
 slotMap = { 
   "row,col": { 
-    val: number,     // Würfelwert 1-4
+    val: number,     // Würfelwert 1-12
     rot: rotation    // Rotation in Radiant
   } 
 }
 ```
+
+**TopFace-Tracking:**
+```javascript
+let topFace = 'f2'; // Anfangslage (f2 oben bei Start in Q3)
+
+function advanceTopFace() {
+  const cw  = { f2: 'f0', f0: 'f1', f1: 'f2' };
+  const ccw = { f2: 'f1', f1: 'f0', f0: 'f2' };
+  topFace = (kippDirection === 'cw') ? cw[topFace] : ccw[topFace];
+}
+```
+
+**Material-Index pro Face (BoxGeometry: [+X,-X,+Y,-Y,+Z,-Z]):**
+```javascript
+const TOP_FACE_MAT_IDX = { f0: 4, f1: 1, f2: 2 };
+```
+
+---
+
+## Nachbarfarben-System (Treffererkennung)
+
+**Kernprinzip:** Jeder Slot (S1-S4) eines Faces hat in jedem Quadranten eine eindeutige Nachbarfarbe vom angrenzenden Rahmen-Farbfeld.
+
+**Nachbarfarben-Matrix:**
+```javascript
+const SLOT_NEIGHBOR_COLORS = {
+  0: { S1: 'blau',    S2: 'violett', S3: 'gruen',   S4: 'orange'  },
+  1: { S1: 'orange',  S2: 'blau',    S3: 'violett', S4: 'gruen'   },
+  2: { S1: 'gruen',   S2: 'orange',  S3: 'blau',    S4: 'violett' },
+  3: { S1: 'violett', S2: 'gruen',   S3: 'orange',  S4: 'blau'    }
+};
+```
+
+**Quadrant-Farbfelder (welches Rahmenfeld gehört zu welchem Quadranten):**
+```javascript
+const QUADRANT_COLORS = {
+  0: ['Nord_C', 'Nord_D', 'West_5', 'West_6'],
+  1: ['Nord_E', 'Nord_F', 'Ost_5',  'Ost_6'],
+  2: ['Süd_E',  'Süd_F',  'Ost_7',  'Ost_8'],
+  3: ['Süd_C',  'Süd_D',  'West_7', 'West_8']
+};
+```
+
+**Desätturierte Farben (für Nicht-Treffer Kärtchen):**
+```javascript
+const DESAT_COLORS = {
+  violett: '#6b5a6b',
+  blau:    '#5a6b7b',
+  gruen:   '#5b7b6b',
+  orange:  '#7b6b5a'
+};
+```
+
+**Treffer-Logik (checkTreffer):**
+1. Ermittle aktuelle Face (topFace → f0/f1/f2) → Offset im Deck
+2. Lese 4 sichtbare Zahlen: `S1=deck[off], S2=deck[off+1], ...`
+3. Prüfe: Ist `card.zahl` unter den sichtbaren Zahlen? → Welcher Slot?
+4. Hole Nachbarfarbe: `SLOT_NEIGHBOR_COLORS[currentQuadrant][hitSlot]`
+5. Vergleich: `neighborColor === card.color.name` → **TREFFER** oder **MISS**
+
+**Treffer-Feedback:**
+- **Hit:** Goldener Rahmen (`#cedb25`, CMYK 18/20/85/3), pulsierende Animation
+- **Miss:** Roter Rahmen, Zahl wird ausgegraut, Kärtchen bleibt sichtbar
+
+---
+
+## Kippziel-Randomisierung
+
+**Spielfarben:**
+```javascript
+const GAME_COLORS = [
+  { name: 'violett', hex: '#a41b85' },
+  { name: 'blau',    hex: '#006bb3' },
+  { name: 'gruen',   hex: '#00a652' },
+  { name: 'orange',  hex: '#e67814' }
+];
+
+const FARB_DISPLAY = {
+  'violett': 'Violett', 'blau': 'Blau', 'gruen': 'Grün', 'orange': 'Orange'
+};
+```
+
+**Randomisierungs-Regeln:**
+- 12 Zahlen × 4 Farben = 48 mögliche Kombinationen
+- Ausschlusskriterien pro neues Kippziel:
+  1. Darf nicht bereits ausgegeben worden sein (`bereitsAusgegeben`)
+  2. Darf nicht aktuell vom Würfel erfüllt sein (`getCurrentErfuellteKombis()`)
+- Kombination wird als String gespeichert: `"zahl_farbe"` (z.B. `"8_gruen"`)
+
+**Tracking-Sets:**
+```javascript
+const bereitsGetroffen = new Set();   // erfolgreiche Treffer
+const bereitsAusgegeben = new Set();  // alle jemals ausgegebenen Kombis
+```
+
+**Kippziel-Generierung:**
+```javascript
+function generateNeueKombiOhne(ausschlussSet) {
+  // Sammelt alle gültigen Kombis (1-12 × 4 Farben minus Ausschlüsse)
+  // Wählt zufällig eine aus
+  // Gibt {zahl, color} zurück oder null wenn keine verfügbar
+}
+```
+
+---
+
+## Spielphasen-System (Game Flow)
+
+**Phasen-Überblick:**
+```
+SPIELZIEL → ENTSCHEIDUNG → DEMO → KIPPEN → SPIELEN → [ENTSCHEIDUNG → ...]
+                                                          ↓ (nach 3. Karte)
+                                                        PAUSE
+                                                          ↓
+                                                     [SPIELEN → ...]
+                                                          ↓ (nach 6. Karte)
+                                                        ENDE
+```
+
+### Phase 1: SPIELZIEL (`gamePhase = 'spielziel'`)
+- Zeigt Spielerklärung mit Beispiel aus aktueller Würfellage
+- Text: "SPIEL ZIEL: Erkippe möglichst viele der **6 Kippziele** (z.B. wie hier: *Zahl* an *Farbe*) mit möglichst wenig **SCHAU**-Sekunden."
+- Brain Score Erklärung: 100% = 6 Hits / bis 20 SCHAU-Sek, 12% = 1 Hit / 120 SCHAU-Sek
+- CSS: `#spielZielText` (position absolute, top: 421px, left: 66px, width: 284px)
+- Weiter-Button zentral unter Text
+
+### Phase 2: ENTSCHEIDUNG (`gamePhase = 'entscheidung'`)
+- Verdecktes Kippziel erscheint an erster Kärtchen-Position
+- Pulsierendes Auge-Icon (120px breit, `pointer-events: auto`)
+  - Positioniert 55px unter verdecktesMesh (3D-Projektion)
+  - Horizontal zentriert: `left: 50%; transform: translateX(-50%)`
+  - Animation: `eyePulse` (scale 1↔1.12, shadow-Pulse)
+- Text: "ENTSCHEIDUNG! Möchtest du dein erstes Kippziel aufdecken?"
+- CSS: `#entscheidungText` (gleiche Position wie tutorialText)
+- Touch-Events: `stopPropagation()` + `preventDefault()` um Canvas-Klick zu verhindern
+
+### Phase 3: DEMO (`gamePhase = 'demo'`)
+- Automatische Kipp-Animation im Uhrzeigersinn (Q3→Q0→Q1→Q2)
+- 4 Kipps mit Text-Sequenz ("KIPPEN", "SCHAUEN", "MERKEN")
+- Kipp-Animation: 800ms Dauer, easeInOut
+- Text-Pausen: 400ms zwischen Phasen
+- Abbruch durch Touch → direkt zu KIPPEN-Phase
+
+### Phase 4: KIPPEN / WÜRFELSCHAUEN (`gamePhase = 'kippen'`)
+- Überschrift: **WÜRFELSCHAUEN**
+- Instructiontext: "Kippe den Würfel in der Box in beliebige Richtung von Ecke zu Ecke..."
+- Timer startet bei erstem Kipp (SCHAU-Sekunden)
+- Timer-Display: zentriert (180px left), zeigt verstrichene Sekunden
+- Swipe-basiertes Kippen (Touch-Drag auf Canvas)
+- Kippziel aufdeckbar per Swipe auf verdecktesMesh
+
+### Phase 5: SPIELEN (`gamePhase = 'spielen'`)
+- Kippziel aufgedeckt, Spieler muss es erkippen
+- Tutorialtext: "ÜBERLEGE! Wie oft, **von 1 bis 6**, und in welche Richtung musst du kippen..."
+- Zielscheibe (dunkelbraun, pulsierend) zwischen Zeile 7/8 und Spalte C/D
+- **Tap-dann-Swipe Mechanik:**
+  1. Spieler tippt 1-6× auf Würfel (Tap-Counter in benachbarten Quadranten)
+  2. Spieler swipet in gewünschte Richtung
+  3. Auto-Kipp-Sequenz läuft ab (700ms/Kipp, 300ms Pause)
+  4. Treffer-Wertung nach Auto-Kipp
+
+**Tap-Counter Anzeige:**
+- Silberne Zahlen auf 3D-PlaneGeometry (0.28×0.28)
+- In beiden benachbarten Quadranten positioniert
+- Metallischer Silber-Gradient mit Schatten
+
+### Phase 6: PAUSE (`gamePhase = 'pause'`)
+- Auslöser: Nach 3. Kippziel (activeCardIdx === 3)
+- Würfel wird auf Ecke balanciert (`animateAufEcke()`)
+- Kärtchen werden ausgeblendet (opacity-Animation 350ms)
+- Pause-Lichter eingeschaltet
+- Cube-Position/Quaternion/topFace/Quadrant werden gespeichert
+- Spieler kann Würfel per Drag drehen (pauseAlpha, pauseBeta)
+- "weiter"-Button → `endPausePhase()` → zurück zu SPIELEN
+
+### Phase 7: ENDE (`gamePhase = 'ende'`)
+- Brain Score wird berechnet und angezeigt
+- Alle UI-Elemente versteckt
+
+---
+
+## Brain Score Berechnung
+
+```javascript
+function calculateBrainScore(observationTime, hits) {
+  const FREE_TIME = 30;      // Sekunden ohne Abzug (→ jetzt 20 im Display)
+  const MAX_TIME = 120;      // Maximum SCHAU-Sekunden
+  const k = 1.0;             // Logistik-Steilheit
+  const c = 2.5976583;       // Logistik-Wendepunkt
+
+  // Time Factor: S_time = 1 - 0.31 × (E / 90)^0.855
+  // Hit Factor:  S_hits = L(hits) / L(6)  [logistische Funktion]
+  // Final:       brainScore = 100 × S_time × S_hits
+
+  // 0 Hits → "No Hit, no Score"
+  // 100% = 6 Hits ≤ 30 Sek
+  // 12% ≈ 1 Hit bei 120 Sek
+}
+```
+
+---
+
+## Kipp-Mechanik (Pivot-Punkte & Richtungen)
+
+**Alle Pivot-Punkte liegen auf π1 (Y=0) an Würfelkanten:**
+
+**8 Kipp-Richtungen:**
+```javascript
+// CW-Zyklus (Uhrzeigersinn): Q3 → Q0 → Q1 → Q2 → Q3
+'north':          Q3→Q0, pivot(-0.234375, 0, 0.109375), axis X, rot -π/2
+'east':           Q0→Q1, pivot(0, 0, 0.343125),         axis Z, rot -π/2
+'south_from_q1':  Q1→Q2, pivot(0.234375, 0, 0.109375),  axis X, rot +π/2
+'west_from_q2':   Q2→Q3, pivot(0, 0, 0.343125),         axis Z, rot +π/2
+
+// CCW-Zyklus (Gegenuhrzeigersinn): Q3 → Q2 → Q1 → Q0 → Q3
+'south':          Q0→Q3, pivot(-0.234375, 0, 0.109375), axis X, rot +π/2
+'west':           Q1→Q0, pivot(0, 0, 0.343125),         axis Z, rot +π/2
+'north_from_q2':  Q2→Q1, pivot(0.234375, 0, 0.109375),  axis X, rot -π/2
+'east_from_q3':   Q3→Q2, pivot(0, 0, 0.343125),         axis Z, rot -π/2
+```
+
+**Kipp-Animation (performKipp):**
+```javascript
+async function performKipp(direction, duration = 800) {
+  // 1. PivotGroup erstellen an Pivot-Punkt
+  // 2. Cube aus kipGroup lösen, in PivotGroup einhängen
+  // 3. Rotation animieren (easeInOut: quadratisch)
+  // 4. Cube zurück in kipGroup, PivotGroup entfernen
+  // 5. currentQuadrant aktualisieren
+}
+```
+
+**Kipp-Richtungserkennung (Swipe):**
+- `kippDirection`: 'cw' (Uhrzeigersinn) oder 'ccw' (Gegen-Uhrzeigersinn)
+- `lockedKippDir`: Gesperrt nach erstem Kipp in einer Runde
+- Swipe-Erkennung: Touch-Delta X/Y, Mindest-Schwelle für Richtung
+
+**Auto-Kipp-Sequenz (nach Tap-Count):**
+```javascript
+async function runAutoKippSequence(steps) {
+  // Führt 'steps' Kipps automatisch aus
+  // 700ms pro Kipp-Animation, 300ms Pause dazwischen
+  // Richtung basiert auf kippDirection + currentQuadrant
+  // Am Ende: checkKippzielTap() für Treffer-Wertung
+}
+```
+
+---
+
+## Liegezeit-Tracking
+
+**Zweck:** Erkennung ob Spieler schnell oder zögerlich kippt.
+
+**Empirische Daten:**
+- Schnelles Kippen: 300-450ms Liegezeit
+- Zögerliches Kippen: 1200ms+
+- Erste Liegezeit = Denkzeit (wird nicht für Auto-Eval gewertet)
+
+```javascript
+let liegeZeiten = [];
+let liegeStartTime = performance.now();
+```
+
+---
+
+## Externe WebP-Assets
+
+| Dateiname | Verwendung |
+|-----------|------------|
+| `Boxboden.webp` | Spielfeld-Boden-Textur |
+| `metallwand.webp` | Wand-Textur (Silber-Metall) |
+| `spieltisch.webp` | Tisch-Oberflächen-Textur |
+| `leerewfl.webp` | Leere Würfelflächen-Textur |
+| `leernohit.webp` | Leeres Kärtchen (kein Treffer) |
+| `blauzielhit.webp` | Kärtchen-Textur Farbe Blau |
+| `orangezielhit.webp` | Kärtchen-Textur Farbe Orange |
+| `gruenzielhit.webp` | Kärtchen-Textur Farbe Grün |
+| `violettzielhit.webp` | Kärtchen-Textur Farbe Violett |
+
+**Würfel-Textur:** WebP Base64-embedded direkt im HTML (cubeTexImg.src)
+**Auge-Icon:** PNG Base64-embedded direkt im HTML (eyeIcon src)
+
+---
+
+## UI-Elemente & CSS-Positionierung
+
+**Haupt-Overlay:** `#uiOverlay` - `pointer-events: none` (Eltern-Container)
+→ Alle klickbaren Kinder brauchen `pointer-events: auto`
+
+**Wichtige UI-Elemente:**
+
+| Element | CSS-Position | Funktion |
+|---------|-------------|----------|
+| `#spielZielText` | top:421px, left:66px, w:284px | Spielziel-Erklärung |
+| `#instructionText` | top:421px, left:66px, w:284px | WÜRFELSCHAUEN-Anleitung |
+| `#tutorialText` | top:421px, left:66px, w:284px | ÜBERLEGE!-Text in Spielphase |
+| `#entscheidungText` | top:421px, left:66px, w:284px | Entscheidungs-Text |
+| `#eyeIcon` | left:50%, translateX(-50%) | Pulsierendes Auge-Icon |
+| `#countdown` | left:180px (zentriert) | SCHAU-Sekunden Timer |
+| `#brainScore` | - | Endergebnis-Anzeige |
+| `#kippTarget` | 3D-projiziert | Dunkelbraune Zielscheibe |
+| `#actionButton` | dynamisch positioniert | Weiter/Zurücksetzen-Button |
+
+**Zielscheibe (#kippTarget):**
+```css
+#kippTarget {
+  width: 14px; height: 14px;
+  border: 2px solid #4a2a10;
+  border-radius: 50%;
+  animation: targetPulse 1.5s ease-in-out infinite;
+}
+#kippTarget::after {
+  /* 4px Punkt innen */
+  width: 4px; height: 4px;
+  background: #4a2a10;
+}
+```
+Position: 3D-projiziert zwischen Zeile 7/8, Spalte C/D → `(-0.78125, 0.002, 0.265625)`
 
 ---
 
@@ -464,6 +807,14 @@ const lookAtZ = 0.7 + (0.421875 - 0.7) * lookAtBlend;
 camera.lookAt(0, lookAtY, lookAtZ);
 ```
 
+**3D→Screen Projektion (für UI-Positionierung):**
+```javascript
+const pos3D = new THREE.Vector3(x, y, z);
+pos3D.project(camera);
+const screenX = (pos3D.x * 0.5 + 0.5) * 360;  // px
+const screenY = (-pos3D.y * 0.5 + 0.5) * 720;  // px
+```
+
 ---
 
 ## Grid & Achsen
@@ -482,40 +833,6 @@ gridHelper2.position.z = 0.421875; // Verschoben mit Spielbereich
 **Achsen:**
 - X-Achse: Verläuft entlang X bei verschiedenen Y-Höhen
 - Z-Achse: Verläuft entlang Z bei verschiedenen Y-Höhen
-
----
-
-## Kipp-Mechanik (Pivot-Punkte)
-
-**Alle Pivot-Punkte liegen auf π1 (Y=0) an Würfelkanten:**
-
-**Nord-/Süd-Kippen (X-Achse Rotation):**
-```javascript
-// Nord-Kipp (Q3 → Q0) oder Süd-Kipp (Q0 → Q3)
-pivotPoint: (-0.234375, 0, 0.109375)
-// West-seitig (-1.5 Zellen X), auf Nord-Pivot-Linie (0.7 Zellen Z)
-
-// Süd-Kipp von Q1 (Q1 → Q2) oder Nord-Kipp von Q2 (Q2 → Q1)
-pivotPoint: (0.234375, 0, 0.109375)
-// Ost-seitig (+1.5 Zellen X), auf Nord-Pivot-Linie (0.7 Zellen Z)
-```
-
-**Ost-/West-Kippen (Z-Achse Rotation):**
-```javascript
-// Ost-Kipp (Q0 → Q1) oder West-Kipp (Q1 → Q0)
-// Ost-Kipp von Q3 (Q3 → Q2) oder West-Kipp von Q2 (Q2 → Q3)
-pivotPoint: (0, 0, 0.343125)
-// Auf y23 (X=0), auf Spielbereich-Zentrum-Z (2.2 Zellen Z)
-```
-
-**Pivot-Logik:**
-- **X-Achse Kippen:** Pivot bei Z = 0.109375 (Nord-Pivot-Linie)
-- **Z-Achse Kippen:** Pivot bei Z = 0.343125 (Spielbereich-Mitte)
-- Pivot X = -0.234375 (West-Würfelkante) oder +0.234375 (Ost-Würfelkante) oder 0 (Mitte)
-
-**Rotationsrichtungen:**
-- Achse X: Nord/Süd-Kippen (targetRotation ±Math.PI/2)
-- Achse Z: Ost/West-Kippen (targetRotation ±Math.PI/2)
 
 ---
 
@@ -549,6 +866,14 @@ Einheiten = (mm / 23.33) × 0.15625
 
 ---
 
+## Bekannte offene Punkte
+
+1. **Card-Marking Preservation Bug:** Nach Runde (Treffer/Miss) gehen Kärtchen-Markierungen (goldene/rote Rahmen) bei neuer Runde verloren. Benötigt `afterKippwertung`-Logik die vorherige Kärtchen-Zustände beibehält.
+2. **Brain Score FREE_TIME:** Im Code `FREE_TIME = 30`, im Display wird "bis 20 SCHAU-Sek" angezeigt → Diskrepanz klären.
+3. **Timer-Modul:** Go/Stopp-Erkennung basierend auf Würfelbewegung (isCubeSettled) ist als Konzept vorhanden, aber noch nicht in game.html integriert.
+
+---
+
 ## Verwendung dieser Referenz
 
 **In anderen Chats:**
@@ -572,7 +897,7 @@ Einheiten = (mm / 23.33) × 0.15625
 ---
 
 *Erstellt: 2026-01-31*  
-*Aktualisiert: 2026-02-02*  
-*Projekt: DigiKipp 3D Memory Game*  
+*Aktualisiert: 2026-02-08*  
+*Projekt: DigiKipp 3D / KIPP COLOR*  
 *Entwickler: Peter Lenhart*  
-*Version: Erweitert mit Holz-Textur, Kärtchen-System, Rahmen-Details, Farbquadraten und Slot-System*
+*Version: Erweitert mit Spielphasen, Treffererkennung, Kippziel-Randomisierung, Brain Score, Tap-Mechanik, UI-System, Asset-Liste und bekannten Bugs*
